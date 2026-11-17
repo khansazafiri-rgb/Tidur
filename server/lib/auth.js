@@ -83,6 +83,7 @@ export function publicUser(db, userId) {
     role: u.role,
     onboarded: !!u.onboarded,
     font_scale: u.font_scale,
+    tutorial_status: u.tutorial_status || null,
   };
 }
 

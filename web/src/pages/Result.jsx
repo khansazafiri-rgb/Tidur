@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Bookmark, BookmarkCheck, CheckCircle2, ChevronDown, Clock, Home, MessageSquareWarning, MinusCircle, RotateCcw, Repeat, XCircle } from 'lucide-react';
+import { Bookmark, BookmarkCheck, CheckCircle2, ChevronDown, Clock, Flame, Home, MessageSquareWarning, MinusCircle, RotateCcw, Repeat, Star, XCircle } from 'lucide-react';
 import { get, post } from '../lib/api.js';
 import { duration } from '../lib/format.js';
 import { usePrefs } from '../lib/prefs.jsx';
 import { Markdown } from '../components/Markdown.jsx';
-import { Alert, Button, CountUp, DifficultyBadge, ErrorState, PageSkeleton, Tabs } from '../components/ui.jsx';
+import { Alert, Button, CountUp, DifficultyBadge, ErrorState, PageSkeleton, ProgressBar, Tabs } from '../components/ui.jsx';
 import { Explanation, OptionList, PassagePanel, ReportModal } from '../components/question.jsx';
-import { useMascot, useMascotContext } from '../mascot/Mascot.jsx';
+import { Confetti, MascotPose, useMascot, useMascotContext } from '../mascot/Mascot.jsx';
 
 function ReviewItem({ item, n, passage, onChange, onReport }) {
   const [open, setOpen] = useState(item.answer == null || !item.is_correct);
@@ -76,6 +76,7 @@ export default function Result() {
     if (s && !celebrated.current) {
       celebrated.current = true;
       const score = s.result.score;
+      mascot.refreshDaily();
       emit('lesson_completed', score < 50 ? { message: 'Sesi selesai! Baca pembahasannya, lalu coba lagi ya.' } : undefined);
     }
   }, [s, emit]);
@@ -106,6 +107,12 @@ export default function Result() {
   if (!s) return <PageSkeleton />;
 
   const { result } = s;
+  const stars = result.score >= 85 ? 3 : result.score >= 70 ? 2 : result.score >= 50 ? 1 : 0;
+  const verdict = result.score >= 85 ? { title: 'Luar biasa!', text: 'Kamu siap untuk subtopik ini. Coba tingkat yang lebih sulit, yuk.', pose: 'completed' }
+    : result.score >= 70 ? { title: 'Bagus sekali!', text: 'Sedikit lagi menuju sempurna. Ulangi yang salah supaya makin mantap.', pose: 'correctAnswer' }
+      : result.score >= 50 ? { title: 'Lumayan!', text: 'Polanya mulai kebaca. Baca pembahasan yang salah, lalu ulangi.', pose: 'studying' }
+        : { title: 'Tetap semangat!', text: 'Ini justru bagian terpenting: baca pembahasannya pelan-pelan, lalu ulangi yang salah.', pose: 'wrongAnswer' };
+  const daily = mascot.daily;
   const shown = s.items.filter((it) => (tab === 'all' ? true : tab === 'wrong' ? it.answer != null && !it.is_correct : tab === 'blank' ? it.answer == null : it.flagged));
   const needsRetry = result.wrong + result.blank > 0;
   const cfg = s.config || {};
@@ -113,52 +120,73 @@ export default function Result() {
 
   return (
     <div className="wrap max-w-4xl space-y-6 py-6 sm:py-8">
-      <section className="card-bold overflow-hidden">
-        <div className="grid gap-4 bg-primary-soft p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-7">
+      {stars > 0 && !reducedMotion && <Confetti count={stars * 14} />}
+      <section className="relative overflow-hidden rounded-[2rem] border-2 border-primary-lip/40 bg-primary px-5 pb-5 pt-6 text-white sm:px-8" style={{ boxShadow: '0 6px 0 rgb(var(--primary-lip))' }}>
+        <div className="pointer-events-none absolute -left-10 -top-12 h-40 w-40 rounded-full bg-white/10" aria-hidden="true" />
+        <div className="pointer-events-none absolute -bottom-20 right-1/3 h-44 w-44 rounded-full bg-white/10" aria-hidden="true" />
+        <div className="relative grid items-center gap-2 sm:grid-cols-[1fr_220px]">
           <div>
-            <p className="eyebrow">Sesi selesai{result.auto ? ' · waktu habis' : ''}</p>
-            <h1 className="mt-1 text-page">{s.title}</h1>
-            <p className="mt-1 text-sm text-muted">Mode {s.mode}</p>
+            <span className="inline-flex rounded-full bg-white/20 px-3 py-1 font-display text-sm font-semibold">Sesi selesai{result.auto ? ' · waktu habis' : ''} · mode {s.mode}</span>
+            <h1 className="mt-2 font-display text-[1.9rem] font-semibold leading-tight sm:text-[2.3rem]">{verdict.title}</h1>
+            <p className="font-semibold text-white/85">{s.title}</p>
+            <div className="mt-3 flex items-end gap-3">
+              <p className="font-display text-7xl font-semibold leading-none">
+                <CountUp value={result.score} reduced={reducedMotion} format={(v) => Math.round(v)} /><span className="text-4xl">%</span>
+              </p>
+              <div className="mb-2 flex gap-1" role="img" aria-label={`${stars} dari 3 bintang`}>
+                {[0, 1, 2].map((i) => (
+                  <Star key={i} className={`h-9 w-9 ${i < stars ? 'pop-in fill-warn text-warn' : 'text-white/35'}`} style={{ animationDelay: `${300 + i * 180}ms` }} />
+                ))}
+              </div>
+            </div>
+            <p className="mt-2 max-w-md text-sm font-semibold text-white/90">{verdict.text}</p>
           </div>
-          <div className="text-left sm:text-right">
-            <p className="font-display text-6xl font-bold leading-none text-primary-ink">
-              <CountUp value={result.score} reduced={reducedMotion} format={(v) => Math.round(v)} /><span className="text-3xl">%</span>
-            </p>
-            <p className="text-meta font-bold text-muted">jawaban benar</p>
+          <div className="mx-auto w-44 sm:w-full"><MascotPose pose={verdict.pose} size={220} /></div>
+        </div>
+      </section>
+
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          [CheckCircle2, 'Benar', result.correct, 'bg-success text-white', 'var(--success-lip)'],
+          [XCircle, 'Salah', result.wrong, 'bg-danger text-white', 'var(--danger-lip)'],
+          [MinusCircle, 'Kosong', result.blank, 'bg-surface text-ink border-2 border-line', 'var(--line-strong)'],
+          [Clock, 'Waktu', duration(result.total_ms), 'bg-english text-white', 'var(--english-lip)'],
+        ].map(([Icon, label, value, cls, lip]) => (
+          <div key={label} className={`flex flex-col rounded-3xl p-4 ${cls}`} style={{ boxShadow: `0 5px 0 rgb(${lip})` }}>
+            <Icon className="h-6 w-6 opacity-90" aria-hidden="true" />
+            <dt className="order-last mt-1 text-meta font-bold opacity-90">{label}</dt>
+            <dd className="mt-1 font-display text-3xl font-semibold leading-none">{value}</dd>
+          </div>
+        ))}
+      </dl>
+
+      {daily && (
+        <div className="card flex items-center gap-4 p-4">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent-ink"><Flame className={`h-7 w-7 fill-current ${daily.streak ? 'flame' : ''}`} /></span>
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-lg font-semibold">{daily.today_answered >= daily.daily_goal ? `Misi hari ini selesai! Streak ${daily.streak} hari` : `Misi hari ini: ${daily.today_answered}/${daily.daily_goal} soal`}</p>
+            <ProgressBar value={daily.today_answered} max={daily.daily_goal} tone={daily.today_answered >= daily.daily_goal ? 'success' : 'accent'} className="mt-1.5" label="Misi hari ini" />
           </div>
         </div>
-        <dl className="grid grid-cols-2 divide-line border-t border-line sm:grid-cols-4 sm:divide-x">
-          {[
-            [CheckCircle2, 'Benar', result.correct, 'text-success-ink'],
-            [XCircle, 'Salah', result.wrong, 'text-danger-ink'],
-            [MinusCircle, 'Kosong', result.blank, 'text-muted'],
-            [Clock, 'Waktu total', duration(result.total_ms), 'text-ink'],
-          ].map(([Icon, label, value, cls]) => (
-            <div key={label} className="flex items-center gap-3 p-4">
-              <Icon className={`h-6 w-6 ${cls}`} aria-hidden="true" />
-              <div><dt className="text-meta text-muted">{label}</dt><dd className="font-display text-2xl font-bold">{value}</dd></div>
-            </div>
-          ))}
-        </dl>
-      </section>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {needsRetry && (
-          <Button variant="accent" busy={busy === 'retry'} onClick={() => startSession({ source: 'retry', retryOf: s.id, mode: s.mode }, 'retry')}>
+          <Button variant="accent" size="lg" busy={busy === 'retry'} onClick={() => startSession({ source: 'retry', retryOf: s.id, mode: s.mode }, 'retry')}>
             <RotateCcw className="h-4 w-4" /> Ulangi yang salah ({result.wrong + result.blank})
           </Button>
         )}
         {cfg.source !== 'retry' && (
-          <Button variant="secondary" busy={busy === 'again'} onClick={() => startSession({ ...again, count: cfg.count, difficulty: cfg.difficulty, mode: s.mode, timerMinutes: cfg.timerMinutes }, 'again')}>
+          <Button variant="secondary" size="lg" busy={busy === 'again'} onClick={() => startSession({ ...again, count: cfg.count, difficulty: cfg.difficulty, mode: s.mode, timerMinutes: cfg.timerMinutes }, 'again')}>
             <Repeat className="h-4 w-4" /> Latihan lagi
           </Button>
         )}
-        <Link to="/beranda" className="btn-ghost"><Home className="h-4 w-4" /> Ke beranda</Link>
+        <Link to="/beranda" className="btn-ghost btn-lg"><Home className="h-4 w-4" /> Ke beranda</Link>
       </div>
       {startError && <Alert tone="warn">{startError}</Alert>}
 
       <section aria-labelledby="tinjau">
-        <h2 id="tinjau" className="text-section">Tinjau jawaban</h2>
+        <h2 id="tinjau" className="font-display text-2xl font-semibold">Tinjau jawaban</h2>
         <Tabs className="mt-3" value={tab} onChange={setTab} tabs={[
           { value: 'all', label: 'Semua', count: counts.all },
           { value: 'wrong', label: 'Salah', count: counts.wrong },

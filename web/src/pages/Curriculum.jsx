@@ -11,11 +11,11 @@ import { useMascotContext } from '../mascot/Mascot.jsx';
 function SubtopicRow({ s, tone }) {
   const soon = s.status !== 'active';
   return (
-    <li className={`flex flex-wrap items-center gap-3 rounded-xl2 border border-line bg-surface p-3 sm:flex-nowrap ${soon ? 'opacity-70' : ''}`}>
-      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${tone.bg} ${tone.ink}`}><SubtopicIcon code={s.code} /></span>
+    <li className={`flex flex-wrap items-center gap-3 rounded-2xl border-2 border-line bg-surface p-3 shadow-[0_3px_0_rgb(var(--line-strong))] sm:flex-nowrap ${soon ? 'opacity-70' : ''}`}>
+      <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${soon ? 'bg-sunken text-muted' : `${tone.fill} text-white`}`} style={soon ? undefined : { boxShadow: `0 3px 0 rgb(${tone.lip})` }}><SubtopicIcon code={s.code} className="h-6 w-6" /></span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="font-bold">{s.name}</p>
+          <p className="font-display text-lg font-semibold">{s.name}</p>
           {soon ? <span className="chip-muted">Segera hadir</span> : <span className="text-meta text-muted">{num(s.question_count)} soal</span>}
           {!s.in_university && <span className="chip-warn">Tidak diuji kampus ini</span>}
         </div>
@@ -84,11 +84,11 @@ export default function Curriculum() {
             const t = toneOf(u.code);
             const activeSubs = u.subtopics.filter((s) => s.status === 'active');
             return (
-              <section key={u.code} className="card-bold overflow-hidden" aria-labelledby={`unit-${u.code}`}>
+              <section key={u.code} className="card-bold overflow-hidden" style={{ '--lip': t.lip }} aria-labelledby={`unit-${u.code}`}>
                 <div className={`flex items-center gap-4 ${t.bg} px-4 py-3 sm:px-6`}>
                   <UnitImage unit={u.code} className="h-20 w-20 shrink-0 object-contain sm:h-24 sm:w-24" />
                   <div className="min-w-0 flex-1">
-                    <h2 id={`unit-${u.code}`} className={`text-section ${t.ink}`}>{u.name}</h2>
+                    <h2 id={`unit-${u.code}`} className={`font-display text-2xl font-semibold ${t.ink}`}>{u.name}</h2>
                     <p className="text-sm text-ink/80">{u.description}</p>
                     <p className="mt-1 text-meta font-bold text-ink/70">{num(u.question_count)} soal · {num(u.answered)} sudah kamu jawab</p>
                   </div>
@@ -96,7 +96,7 @@ export default function Curriculum() {
                     <Link to={`/latihan/baru?unit=${u.code}`} className="btn-secondary btn-sm hidden shrink-0 sm:inline-flex">Latih satu unit</Link>
                   )}
                 </div>
-                <ul className="space-y-2 bg-sunken/40 p-3 sm:p-4">
+                <ul className="space-y-3 p-3 sm:p-4">
                   {u.subtopics.map((s) => <SubtopicRow key={s.code} s={s} tone={t} />)}
                 </ul>
                 {activeSubs.length > 1 && (

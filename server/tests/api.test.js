@@ -267,3 +267,25 @@ test('keamanan: origin asing ditolak', async () => {
   });
   assert.equal(res.status, 403);
 });
+
+test('misi harian, streak, dan status tutorial', async () => {
+  resetRateLimits();
+  const call = client();
+  await call('POST', '/api/auth/register', { email: 'misi@contoh.id', password: 'rahasia123' });
+  let r = await call('GET', '/api/me/daily');
+  assert.equal(r.body.today_answered, 0);
+  assert.equal(r.body.daily_goal, 10);
+  assert.equal(r.body.streak, 0);
+  assert.equal(r.body.week.length, 7);
+  r = await call('POST', '/api/sessions', { subtopics: ['NUMERIK.BARISAN'], count: 10, mode: 'santai' });
+  const sid = r.body.id;
+  for (let i = 0; i < r.body.items.length; i++) await call('PATCH', `/api/sessions/${sid}/items/${i}`, { answer: 'B' });
+  r = await call('GET', '/api/me/daily');
+  assert.ok(r.body.today_answered >= 10);
+  assert.equal(r.body.streak, 1);
+  assert.equal(r.body.week[6].done, true);
+  r = await call('PATCH', '/api/me/profile', { tutorial_status: 'done' });
+  assert.equal(r.body.user.tutorial_status, 'done');
+  r = await call('PATCH', '/api/me/profile', { tutorial_status: 'asal' });
+  assert.equal(r.status, 400);
+});

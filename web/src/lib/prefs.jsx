@@ -10,7 +10,7 @@ function applyTheme(theme) {
 }
 
 export function PrefsProvider({ children }) {
-  const [theme, setTheme] = useState(() => load('iup-theme', 'system'));
+  const [theme, setTheme] = useState(() => load('iup-theme', 'light'));
   const [textScale, setTextScale] = useState(() => load('iup-text-scale', 1));
   const [mascotHidden, setMascotHidden] = useState(() => load('iup-mascot-hidden', false));
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);

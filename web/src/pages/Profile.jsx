@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Download, LogOut, Trash2 } from 'lucide-react';
+import { Download, GraduationCap, LogOut, Trash2 } from 'lucide-react';
 import { del, get, post } from '../lib/api.js';
 import { useAuth } from '../lib/auth.jsx';
 import { usePrefs, TEXT_SCALES } from '../lib/prefs.jsx';
@@ -57,9 +57,10 @@ function Preferences() {
   const { theme, setTheme, textScale, setTextScale, mascotHidden, setMascotHidden } = usePrefs();
   return (
     <div className="card space-y-5 p-5 sm:p-6">
-      <Segmented label="Tema" value={theme} onChange={setTheme} options={[{ value: 'system', label: 'Ikuti sistem' }, { value: 'light', label: 'Terang' }, { value: 'dark', label: 'Gelap' }]} />
+      <Segmented label="Tema" value={theme} onChange={setTheme} options={[{ value: 'light', label: 'Terang' }, { value: 'dark', label: 'Gelap' }, { value: 'system', label: 'Ikuti sistem' }]} />
       <Segmented label="Ukuran teks soal" value={textScale} onChange={setTextScale} options={TEXT_SCALES.map((v) => ({ value: v, label: `${Math.round(v * 100)}%` }))} />
-      <Toggle checked={!mascotHidden} onChange={(v) => setMascotHidden(!v)} label="Tampilkan maskot melayang" description="Kucing dokter di pojok kanan bawah. Animasinya otomatis mati bila perangkatmu memakai pengaturan kurangi gerak." />
+      <Toggle checked={!mascotHidden} onChange={(v) => setMascotHidden(!v)} label="Tampilkan Oyen" description="Kucing dokter di pojok kanan bawah: misi harian, petunjuk soal, dan tips. Animasinya otomatis mati bila perangkatmu memakai pengaturan kurangi gerak." />
+      <Link to="/tutorial" className="btn-secondary"><GraduationCap className="h-4 w-4" /> Ulangi tutorial</Link>
       <p className="text-meta text-muted">Pengaturan ini tersimpan di perangkat ini saja.</p>
     </div>
   );

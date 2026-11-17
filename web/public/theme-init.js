@@ -1,7 +1,7 @@
-// Pasang tema dan ukuran teks sebelum halaman digambar, supaya tidak berkedip.
+// Pasang tema sebelum halaman digambar, supaya tidak berkedip. Bawaan: terang.
 (function () {
   try {
-    var t = localStorage.getItem('iup-theme') || 'system';
+    var t = JSON.parse(localStorage.getItem('iup-theme') || '"light"');
     var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   } catch (e) {

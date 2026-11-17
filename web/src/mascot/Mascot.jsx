@@ -1,14 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { usePrefs } from '../lib/prefs.jsx';
+import { useAuth } from '../lib/auth.jsx';
+import { get } from '../lib/api.js';
+import { MascotPanel } from './MascotPanel.jsx';
 import {
   config, assetUrls, stateDef, ensureKeyframes, eventPriority, ruleFor, preloadState, LIKELY_NEXT,
 } from './engine.js';
 
 // ------------------------------------------------------------------ pesan gelembung
 
-const TIPS = [
+export const TIPS = [
   'Baca pertanyaannya dulu, baru bacaannya. Lebih hemat waktu!',
   'Soal barisan: cek selisih, lalu selisih dari selisihnya.',
   'Ragu? Tandai dulu, lanjut, lalu kembali di akhir.',
@@ -17,10 +20,10 @@ const TIPS = [
   '10 soal sehari lebih baik daripada 100 soal sekali seminggu.',
   'Baca pembahasan soal yang benar juga. Kadang benarnya kebetulan.',
 ];
-const pick = (a) => a[Math.floor(Math.random() * a.length)];
+export const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const MESSAGES = {
   first_page_visit: () => pick(['Halo! Siap latihan hari ini?', 'Hai! Aku temani belajarmu ya.', 'Halo, calon dokter!']),
-  mascot_click: () => pick(TIPS),
+  mascot_click: () => null,
   answer_correct: () => pick(['Mantap, benar!', 'Tepat sekali!', 'Keren, lanjut!']),
   answer_wrong: () => pick(['Nggak apa-apa, baca pembahasannya ya.', 'Hampir! Cek lagi polanya.', 'Salah itu bagian dari belajar.']),
   lesson_completed: () => 'Sesi selesai! Bangga sama kamu.',
@@ -39,6 +42,11 @@ export function MascotProvider({ enabled = true, children }) {
   const [confettiKey, setConfettiKey] = useState(0);
   const [context, setContextState] = useState({ name: null, minimize: false, staticMotion: false, reactions: true, bottom: null });
   const [emptyStates, setEmptyStates] = useState(0);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [assist, setAssistState] = useState(null);   // bantuan khusus halaman (mis. petunjuk soal)
+  const [daily, setDaily] = useState(null);           // misi harian & streak
+  const [nudge, setNudge] = useState(null);           // pesan proaktif yang belum dibaca
+  const { user } = useAuth();
 
   const ctxPathRef = useRef(null);      // path halaman yang terakhir memasang konteks
   const baseRef = useRef('idle');       // state persisten (bukan yang berdurasi)
@@ -106,6 +114,36 @@ export function MascotProvider({ enabled = true, children }) {
     }
   }, [show]);
 
+  /** Tampilkan gelembung tanpa event. Opsional: pose berdurasi singkat (prioritas terendah). */
+  const say = useCallback((text, { state, ms = 4200 } = {}) => {
+    const playing = timedRef.current;
+    if (state && !(playing && Date.now() < playing.until)) {
+      const back = baseRef.current;
+      clearTimeout(playing?.timer);
+      const timer = setTimeout(() => { timedRef.current = null; show(baseRef.current || back, null); }, ms);
+      timedRef.current = { event: '__say', until: Date.now() + ms, timer, previous: back };
+      show(state, text, ms + 400, true);
+    } else {
+      setView((v) => ({ ...v, bubble: text }));
+      clearTimeout(bubbleTimer.current);
+      bubbleTimer.current = setTimeout(() => setView((v) => ({ ...v, bubble: null })), ms);
+    }
+  }, [show]);
+
+  /** Pose singkat tanpa gelembung (variasi idle). Tidak memotong reaksi yang sedang berjalan. */
+  const playState = useCallback((state, ms) => {
+    if (timedRef.current && Date.now() < timedRef.current.until) return;
+    const back = baseRef.current;
+    const timer = setTimeout(() => { timedRef.current = null; show(back, null); }, ms);
+    timedRef.current = { event: '__idle', until: Date.now() + ms, timer, previous: back };
+    show(state, null, 0, true);
+  }, [show]);
+
+  const refreshDaily = useCallback(() => {
+    if (!user) { setDaily(null); return; }
+    get('/me/daily').then(setDaily).catch(() => {});
+  }, [user]);
+
   /** Halaman memberi tahu konteksnya (contextRules). */
   const setContext = useCallback((name, extra = {}) => {
     const rule = config.contextRules?.[name] || {};
@@ -131,6 +169,37 @@ export function MascotProvider({ enabled = true, children }) {
       }
     }
   }, [emit, show]);
+
+  useEffect(() => { setPanelOpen(false); }, [location.pathname]);
+  useEffect(() => { refreshDaily(); }, [refreshDaily, location.pathname]);
+
+  // Sapaan proaktif sekali per sesi browser: sesi belum selesai, atau misi harian belum tercapai.
+  useEffect(() => {
+    if (!daily || !user?.onboarded || location.pathname.startsWith('/sesi') || location.pathname.startsWith('/tutorial')) return undefined;
+    let key = null;
+    let text = null;
+    if (daily.active_session) { key = `sesi-${daily.active_session.id}`; text = 'Sesimu belum selesai. Ketuk aku untuk lanjut!'; }
+    else if (daily.today_answered < daily.daily_goal) {
+      key = `misi-${daily.week?.[6]?.day}`;
+      const left = daily.daily_goal - daily.today_answered;
+      text = daily.today_answered === 0 ? `Misi hari ini: ${daily.daily_goal} soal. Yuk mulai!` : `${left} soal lagi untuk misi hari ini!`;
+    }
+    if (!key) { setNudge(null); return undefined; }
+    let seen = false;
+    try { seen = sessionStorage.getItem(`iup-nudge-${key}`) === '1'; } catch { /* abaikan */ }
+    setNudge(seen ? null : { key, text });
+    if (seen) return undefined;
+    const t = setTimeout(() => say(text, { ms: 5000 }), 2500);
+    return () => clearTimeout(t);
+  }, [daily, user, location.pathname, say]);
+
+  const markNudgeSeen = useCallback(() => {
+    if (!nudge) return;
+    try { sessionStorage.setItem(`iup-nudge-${nudge.key}`, '1'); } catch { /* abaikan */ }
+    setNudge(null);
+  }, [nudge]);
+
+  const setAssist = useCallback((a) => setAssistState(a), []);
 
   // Halaman tanpa konteks khusus kembali ke idle saat berpindah rute.
   // Efek halaman (anak) berjalan lebih dulu, jadi konteks yang baru dipasang tidak ikut dihapus.
@@ -158,14 +227,19 @@ export function MascotProvider({ enabled = true, children }) {
   }, []);
 
   const value = useMemo(() => ({
-    enabled, view, emit, setContext, context, confettiKey, emptyStates, registerEmptyState, visitKey: location.key,
-  }), [enabled, view, emit, setContext, context, confettiKey, emptyStates, registerEmptyState, location.key]);
+    enabled, view, emit, say, playState, setContext, context, confettiKey, emptyStates, registerEmptyState, visitKey: location.key,
+    panelOpen, setPanelOpen, assist, setAssist, daily, refreshDaily, nudge, markNudgeSeen,
+  }), [enabled, view, emit, say, playState, setContext, context, confettiKey, emptyStates, registerEmptyState, location.key,
+    panelOpen, assist, setAssist, daily, refreshDaily, nudge, markNudgeSeen]);
 
   return <MascotCtx.Provider value={value}>{children}</MascotCtx.Provider>;
 }
 
 export function useMascot() {
-  return useContext(MascotCtx) || { emit: () => {}, setContext: () => {}, enabled: false, registerEmptyState: () => () => {} };
+  return useContext(MascotCtx) || {
+    emit: () => {}, say: () => {}, playState: () => {}, setContext: () => {}, setAssist: () => {}, refreshDaily: () => {},
+    setPanelOpen: () => {}, enabled: false, registerEmptyState: () => () => {},
+  };
 }
 
 /** Pasang konteks halaman sekali saat halaman dibuka. */
@@ -270,6 +344,8 @@ export function FloatingMascot({ bottomNav = false }) {
   // lalu keluar penuh saat bereaksi atau disentuh, supaya tidak menutupi konten (avoidBlockingContent).
   const [scrolling, setScrolling] = useState(false);
   const [peekOpen, setPeekOpen] = useState(false);
+  const [squish, setSquish] = useState(0);
+  const [hearts, setHearts] = useState([]);
   useEffect(() => {
     if (!isMobile) return undefined;
     let t;
@@ -279,18 +355,55 @@ export function FloatingMascot({ bottomNav = false }) {
   }, [isMobile]);
   useEffect(() => { setPeekOpen(false); }, [m.context.name]);
 
+  // Variasi idle: sesekali melambai atau mengangguk supaya terasa hidup (bukan di layar soal).
+  const quiet = m.context.name === 'quizPage' || m.context.minimize || m.panelOpen || reducedMotion;
+  useEffect(() => {
+    if (quiet || !m.enabled || mascotHidden) return undefined;
+    const t = setInterval(() => {
+      if (document.hidden || Math.random() < 0.4) return;
+      m.playState(pick(['greeting', 'thinking', 'greeting']), 1600);
+    }, 28000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quiet, m.enabled, mascotHidden, m.playState]);
+
+  // Tutup panel dengan Esc.
+  useEffect(() => {
+    if (!m.panelOpen) return undefined;
+    const on = (e) => { if (e.key === 'Escape') m.setPanelOpen(false); };
+    window.addEventListener('keydown', on);
+    return () => window.removeEventListener('keydown', on);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [m.panelOpen]);
+
   if (!m.enabled || mascotHidden || m.emptyStates > 0) return null;
 
   const { state, seq, bubble, timed } = m.view;
   const s = stateDef(state) || stateDef('idle');
   const p = config.placement;
-  const minimized = m.context.minimize;
-  const size = minimized ? 56 : isMobile ? p.mobileSizePx : p.desktopSizePx;
+  const minimized = m.context.minimize && !m.panelOpen;
+  const size = minimized ? 64 : isMobile ? p.mobileSizePx : p.desktopSizePx;
   const motionOff = reducedMotion || m.context.staticMotion || minimized || (config.accessibility?.respectReducedMotion && reducedMotion);
   const animClass = motionOff ? '' : `mascot-a-${s.animation}`;
   // Di ponsel, maskot naik di atas navigasi bawah supaya tidak menutupinya.
   const bottom = m.context.bottom ?? (bottomNav && isMobile ? 76 : p.bottomOffsetPx);
-  const tucked = isMobile && !minimized && !timed && !peekOpen && (scrolling || m.context.name === 'quizPage');
+  const tucked = isMobile && !minimized && !timed && !peekOpen && !m.panelOpen && (scrolling || m.context.name === 'quizPage');
+  const showBadge = !!m.nudge && !m.panelOpen && !minimized;
+
+  const tap = () => {
+    if (tucked) { setPeekOpen(true); }
+    setSquish((k) => k + 1);
+    m.emit('mascot_click', { message: null });
+    m.markNudgeSeen?.();
+    m.setPanelOpen(!m.panelOpen);
+  };
+  const pet = () => {
+    setSquish((k) => k + 1);
+    const burst = Array.from({ length: 5 }, (_, i) => ({ id: `${Date.now()}-${i}`, hx: `${(Math.random() - 0.5) * 80}px`, delay: i * 90 }));
+    setHearts((h) => [...h, ...burst]);
+    setTimeout(() => setHearts((h) => h.filter((x) => !burst.includes(x))), 1500);
+    m.say(pick(['Purrr... makasih!', 'Hehe, geli!', 'Meong! Semangat belajarnya ya!', 'Aku jadi makin semangat!']), { state: 'correctAnswer', ms: 1600 });
+  };
 
   return (
     <>
@@ -298,34 +411,31 @@ export function FloatingMascot({ bottomNav = false }) {
         className={`mascot-float ${paused || offscreen ? 'mascot-paused' : ''} ${config.interactionRules?.hoverEnabledOnDesktop && !minimized ? 'mascot-hoverable' : ''}`}
         style={{
           '--mascot-size': `${size}px`, '--mascot-right': `${isMobile ? 12 : p.rightOffsetPx}px`, '--mascot-bottom': `${bottom}px`,
-          transform: tucked ? 'translateX(68%)' : 'none', opacity: tucked ? 0.9 : 1, transition: 'transform 260ms ease-out, opacity 260ms ease-out',
+          transform: tucked ? 'translateX(68%)' : 'none', opacity: tucked ? 0.92 : 1, transition: 'transform 260ms ease-out, opacity 260ms ease-out',
         }}
       >
-        {bubble && !minimized && !tucked && (
-          <div className="mascot-bubble" role="status" aria-live="polite">{bubble}</div>
+        {m.panelOpen && <MascotPanel onClose={() => m.setPanelOpen(false)} onPet={pet} onHide={() => { m.setPanelOpen(false); setMascotHidden(true); }} />}
+        {bubble && !minimized && !tucked && !m.panelOpen && (
+          <button type="button" onClick={tap} className="mascot-bubble text-left" aria-live="polite">{bubble}</button>
         )}
         <div ref={stageRef} className="mascot-stage">
           <button
             type="button"
             className="block h-full w-full rounded-full focus-visible:outline-offset-4"
-            aria-label="Kucing Dokter, maskot belajar. Tekan untuk menyapa dan mendapat tips."
-            onClick={() => { if (tucked) setPeekOpen(true); m.emit('mascot_click'); }}
+            aria-label={m.panelOpen ? 'Tutup panel Oyen' : 'Oyen, maskot belajar. Tekan untuk membuka misi harian, petunjuk, dan tips.'}
+            aria-expanded={m.panelOpen}
+            onClick={tap}
           >
-            <div key={seq} className={`mascot-anim ${animClass}`}>
-              <CrossfadeStage assetKey={s.asset} alt="" eager />
+            <div key={`sq-${squish}`} className={`h-full w-full ${squish ? 'mascot-squish' : ''}`}>
+              <div key={seq} className={`mascot-anim ${animClass}`}>
+                <CrossfadeStage assetKey={s.asset} alt="" eager />
+              </div>
             </div>
           </button>
-          {p.allowUserDismiss && !minimized && !tucked && (
-            <button
-              type="button"
-              onClick={() => setMascotHidden(true)}
-              className="absolute -right-1 -top-1 grid h-7 w-7 place-items-center rounded-full border border-line bg-surface text-muted shadow-card hover:text-ink"
-              aria-label="Sembunyikan maskot (bisa ditampilkan lagi dari Profil)"
-              title="Sembunyikan maskot"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+          {hearts.map((h) => (
+            <Heart key={h.id} className="mascot-heart h-6 w-6 fill-current" style={{ '--hx': h.hx, animationDelay: `${h.delay}ms` }} aria-hidden="true" />
+          ))}
+          {showBadge && <span className="mascot-badge" aria-hidden="true">1</span>}
         </div>
       </div>
       {m.confettiKey > 0 && !reducedMotion && <Confetti key={m.confettiKey} />}
@@ -347,11 +457,11 @@ export function MascotSpacer() {
  * Pose statis/beranimasi untuk layar kosong dan halaman khusus (contextRules.emptyState).
  * Selama tampil, maskot melayang disembunyikan agar tidak dobel.
  */
-export function MascotPose({ pose, size = 200, className = '', alt = '' }) {
+export function MascotPose({ pose, size = 200, className = '', alt = '', register = true }) {
   const m = useMascot();
   const { reducedMotion } = usePrefs();
   const s = stateDef(pose) || { asset: pose, animation: 'idleFloat' };
-  useEffect(() => { ensureKeyframes(); return m.registerEmptyState(); }, [m.registerEmptyState]);
+  useEffect(() => { ensureKeyframes(); return register ? m.registerEmptyState() : undefined; }, [m.registerEmptyState, register]);
   const anim = reducedMotion ? '' : `mascot-a-${s.animation}`;
   const urls = assetUrls(s.asset) || assetUrls('idle');
   return (

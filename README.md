@@ -13,7 +13,8 @@ Dibangun dari PRD *Web Persiapan Tes Masuk FK IUP* versi 0.1. Maskot kucing dokt
 |---|---|---|
 | F1 | Daftar/masuk email + kata sandi, Google (opsional), verifikasi email, lupa sandi, hapus akun | ✅ |
 | F2 | Onboarding 3 langkah: kampus target, tanggal tes, waktu belajar (semua bisa dilewati) | ✅ |
-| F3 | Beranda: sapaan, hitung mundur, *Lanjutkan*, *Latih hari ini* (3 subtopik terlemah), progres per unit | ✅ |
+| — | **Tutorial interaktif** bersama Oyen setelah onboarding (`/tutorial`): pengguna mencoba sendiri tiap langkah. Status tersimpan di server, bisa diulang dari panel Oyen atau Profil | ✅ |
+| F3 | Beranda berbentuk **jalur belajar** (bulatan subtopik per unit, mahkota bila dikuasai), hitung mundur, *Lanjutkan*, misi harian + streak | ✅ |
 | F4 | Peta kurikulum per kampus, kartu unit bergambar, subtopik *segera hadir*, tombol *semua subtopik* | ✅ |
 | F5 | Latihan per subtopik/unit: 10/20/30 soal, kesulitan, mode santai/ujian, timer, ragu-ragu, bookmark, navigator, lanjutkan sesi, *Ulangi yang salah* | ✅ |
 | F6 | Pembahasan dengan rumus ter-render, label *dibuat dengan bantuan AI*, *Membantu/Kurang membantu*, lapor soal | ✅ |
@@ -30,8 +31,8 @@ Mode ujian hanya membukanya setelah sesi dikumpulkan; mode santai hanya untuk so
 
 ## Teknologi
 
-- **Frontend:** React 18 + Vite + Tailwind CSS. Token warna sebagai variabel CSS (tiga angka RGB), mode terang/gelap,
-  huruf Baloo 2 + Nunito Sans di-host sendiri (tanpa Google Fonts, tanpa pelacak).
+- **Frontend:** React 18 + Vite + Tailwind CSS. Gaya "juicy" (tombol & kartu 3D dengan bibir bawah, warna cerah per unit),
+  tema terang sebagai bawaan (mode gelap opsional), huruf Fredoka + Nunito di-host sendiri (tanpa Google Fonts, tanpa pelacak).
 - **Backend:** Node.js ≥ 22.13 + Express + SQLite bawaan Node (`node:sqlite`). Satu proses, satu file database.
 - **Hosting:** satu VPS dengan Caddy sebagai reverse proxy (lihat [`docs/DEPLOY.md`](docs/DEPLOY.md)).
 

@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user','contributor','owner')),
   onboarded INTEGER NOT NULL DEFAULT 0,
   font_scale REAL NOT NULL DEFAULT 1,
+  tutorial_status TEXT,
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 
@@ -296,8 +297,15 @@ export function openDb(file = config.dbPath) {
   const d = new DatabaseSync(file);
   d.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
   d.exec(SCHEMA);
+  migrate(d);
   seed(d);
   return d;
+}
+
+/** Tambahan kolom untuk database yang dibuat versi sebelumnya. */
+function migrate(d) {
+  const cols = new Set(d.prepare('PRAGMA table_info(profiles)').all().map((c) => c.name));
+  if (!cols.has('tutorial_status')) d.exec('ALTER TABLE profiles ADD COLUMN tutorial_status TEXT');
 }
 
 export function getDb() {
