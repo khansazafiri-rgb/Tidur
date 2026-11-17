@@ -1,0 +1,12 @@
+# Ganti iup.example.com dengan domainmu. Caddy mengurus HTTPS otomatis.
+iup.example.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8787
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	log {
+		output file /var/log/caddy/iup.log
+	}
+}

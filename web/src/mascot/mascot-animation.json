@@ -1,0 +1,210 @@
+{
+  "version": "1.0.0",
+  "system": "Interactive Medical Kitten Mascot",
+  "purpose": "Animated study companion for a medical entrance exam learning app",
+  "design": {
+    "style": "friendly modern 2D vector",
+    "character": "orange tabby medical kitten",
+    "outline": "#1E2347",
+    "background": "#F6F8FF",
+    "primary": "#3B5BDB",
+    "accent": "#FF8A3D",
+    "preserveCharacterIdentity": true,
+    "allowStretching": false,
+    "allowColorChanges": false
+  },
+  "assets": {
+    "basePath": "/mascot/",
+    "idle": "idle.png",
+    "wave": "wave.png",
+    "reading": "reading.png",
+    "thinking": "thinking.png",
+    "excited": "excited.png",
+    "headTilt": "head-tilt.png",
+    "sad": "sad.png",
+    "sleeping": "sleeping.png",
+    "celebrating": "celebrating.png",
+    "emptyNotes": "empty-notes.png",
+    "emptyCart": "empty-cart.png",
+    "emptyBookmark": "empty-bookmark.png",
+    "emptySearch": "empty-search.png",
+    "offline": "offline.png",
+    "lost": "lost.png"
+  },
+  "placement": {
+    "mode": "floating",
+    "position": "bottom-right",
+    "desktopSizePx": 140,
+    "mobileSizePx": 96,
+    "bottomOffsetPx": 24,
+    "rightOffsetPx": 24,
+    "safeAreaAware": true,
+    "allowUserDismiss": true,
+    "avoidBlockingContent": true
+  },
+  "animations": {
+    "idleFloat": {
+      "durationMs": 3200,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "frames": [
+        {"at": 0, "transform": "translateY(0) scale(1)"},
+        {"at": 0.5, "transform": "translateY(-4px) scale(1.01)"},
+        {"at": 1, "transform": "translateY(0) scale(1)"}
+      ]
+    },
+    "hoverTilt": {
+      "durationMs": 250,
+      "easing": "ease-out",
+      "iterations": 1,
+      "frames": [
+        {"at": 0, "transform": "rotate(0deg) scale(1)"},
+        {"at": 1, "transform": "rotate(3deg) scale(1.04)"}
+      ]
+    },
+    "waveBounce": {
+      "durationMs": 1200,
+      "easing": "ease-in-out",
+      "iterations": 1,
+      "frames": [
+        {"at": 0, "transform": "rotate(0deg) translateY(0)"},
+        {"at": 0.35, "transform": "rotate(-3deg) translateY(-5px)"},
+        {"at": 0.7, "transform": "rotate(3deg) translateY(-2px)"},
+        {"at": 1, "transform": "rotate(0deg) translateY(0)"}
+      ]
+    },
+    "thinkingSway": {
+      "durationMs": 2400,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "frames": [
+        {"at": 0, "transform": "rotate(-2deg)"},
+        {"at": 0.5, "transform": "rotate(2deg)"},
+        {"at": 1, "transform": "rotate(-2deg)"}
+      ]
+    },
+    "readingFloat": {
+      "durationMs": 4000,
+      "easing": "ease-in-out",
+      "iterations": "infinite",
+      "frames": [
+        {"at": 0, "transform": "translateY(0)"},
+        {"at": 0.5, "transform": "translateY(-3px)"},
+        {"at": 1, "transform": "translateY(0)"}
+      ]
+    },
+    "celebrationJump": {
+      "durationMs": 1500,
+      "easing": "ease-in-out",
+      "iterations": 1,
+      "frames": [
+        {"at": 0, "transform": "translateY(0) scale(1)"},
+        {"at": 0.3, "transform": "translateY(-14px) scale(1.05)"},
+        {"at": 0.65, "transform": "translateY(0) scale(0.97)"},
+        {"at": 1, "transform": "translateY(0) scale(1)"}
+      ]
+    },
+    "gentleNod": {
+      "durationMs": 900,
+      "easing": "ease-in-out",
+      "iterations": 1,
+      "frames": [
+        {"at": 0, "transform": "rotate(0deg)"},
+        {"at": 0.5, "transform": "rotate(3deg)"},
+        {"at": 1, "transform": "rotate(0deg)"}
+      ]
+    }
+  },
+  "states": {
+    "idle": {"asset": "idle", "animation": "idleFloat"},
+    "greeting": {"asset": "wave", "animation": "waveBounce", "durationMs": 1200},
+    "studying": {"asset": "reading", "animation": "readingFloat"},
+    "thinking": {"asset": "thinking", "animation": "thinkingSway"},
+    "correctAnswer": {"asset": "excited", "animation": "celebrationJump", "durationMs": 1500},
+    "wrongAnswer": {"asset": "headTilt", "animation": "gentleNod", "durationMs": 1200},
+    "completed": {"asset": "celebrating", "animation": "celebrationJump", "durationMs": 1800, "confetti": true},
+    "resting": {"asset": "sleeping", "animation": "idleFloat"},
+    "emptyNotes": {"asset": "emptyNotes", "animation": "idleFloat"},
+    "emptyCart": {"asset": "emptyCart", "animation": "idleFloat"},
+    "emptyBookmark": {"asset": "emptyBookmark", "animation": "idleFloat"},
+    "emptySearch": {"asset": "emptySearch", "animation": "thinkingSway"},
+    "offline": {"asset": "offline", "animation": "gentleNod"},
+    "notFound": {"asset": "lost", "animation": "thinkingSway"}
+  },
+  "eventRules": [
+    {"event": "first_page_visit", "state": "greeting", "oncePerPageVisit": true, "returnTo": "idle"},
+    {"event": "mascot_click", "state": "greeting", "returnTo": "previous"},
+    {"event": "study_started", "state": "studying"},
+    {"event": "answer_submitted", "state": "thinking"},
+    {"event": "answer_correct", "state": "correctAnswer", "returnTo": "studying"},
+    {"event": "answer_wrong", "state": "wrongAnswer", "returnTo": "studying"},
+    {"event": "lesson_completed", "state": "completed", "returnTo": "idle"},
+    {"event": "notes_empty", "state": "emptyNotes"},
+    {"event": "cart_empty", "state": "emptyCart"},
+    {"event": "bookmarks_empty", "state": "emptyBookmark"},
+    {"event": "search_no_results", "state": "emptySearch"},
+    {"event": "connection_lost", "state": "offline"},
+    {"event": "connection_restored", "state": "idle"},
+    {"event": "page_not_found", "state": "notFound"}
+  ],
+  "interactionRules": {
+    "hoverEnabledOnDesktop": true,
+    "tapEnabledOnMobile": true,
+    "keyboardAccessible": true,
+    "allowDrag": false,
+    "maxConcurrentAnimations": 1,
+    "interactionCooldownMs": 1500,
+    "eventPriority": [
+      "connection_lost",
+      "lesson_completed",
+      "answer_correct",
+      "answer_wrong",
+      "answer_submitted",
+      "mascot_click",
+      "first_page_visit"
+    ],
+    "restorePreviousState": true,
+    "stopAnimationWhenOffscreen": true,
+    "pauseWhenPageHidden": true
+  },
+  "contextRules": {
+    "landingPage": {"state": "greeting", "allowGentleMotion": true},
+    "learningPage": {"state": "studying", "allowGentleMotion": true},
+    "quizPage": {"state": "idle", "allowAnswerReactions": true},
+    "focusedExam": {"minimizeFloatingMascot": true, "disableDecorativeMotion": true},
+    "emptyState": {"useContextualIllustration": true, "disableFloatingDuplicate": true},
+    "learningUnitCards": {"hoverScale": 1.03, "hoverDurationMs": 220, "disableAutoLoop": true}
+  },
+  "accessibility": {
+    "respectReducedMotion": true,
+    "reducedMotionFallback": "static",
+    "supportKeyboardActivation": true,
+    "requireAccessibleButtonLabel": true,
+    "avoidFlashing": true,
+    "neverHideImportantContent": true
+  },
+  "performance": {
+    "preferTransparentWebP": true,
+    "retainPNGAsFallback": true,
+    "lazyLoadNoncriticalAssets": true,
+    "preloadIdleAsset": true,
+    "preloadNextLikelyPose": true,
+    "avoidLayoutShift": true,
+    "useTransformAndOpacity": true,
+    "avoidContinuousConfetti": true
+  },
+  "developerInstructions": [
+    "Create one reusable Mascot component.",
+    "Load images from the configured asset paths.",
+    "Build CSS keyframes from the animation frame definitions.",
+    "Switch mascot states when the application emits matching events.",
+    "Use opacity crossfades when changing pose images.",
+    "Keep the mascot inside a stable image container.",
+    "Use the idle pose when an asset is unavailable.",
+    "Allow only one state animation at a time.",
+    "Prevent decorative animations from interrupting learning.",
+    "Respect reduced-motion preferences.",
+    "Prepare separate art layers before implementing true limb or eye animation.",
+    "Keep the original mascot colors, facial identity, clothing and proportions."
+  ]
+}

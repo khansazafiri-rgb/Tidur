@@ -1,0 +1,9 @@
+[Unit]
+Description=Cadangan database Web Persiapan IUP
+
+[Service]
+Type=oneshot
+User=iup
+WorkingDirectory=/opt/iup
+EnvironmentFile=/opt/iup/.env
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning scripts/backup.js /var/backups/iup

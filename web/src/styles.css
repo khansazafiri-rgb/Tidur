@@ -1,0 +1,406 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Token warna: tiga angka RGB, dibaca Tailwind lewat rgb(var(--x) / alpha).
+   Palet mengikuti PRD: putih kebiruan, indigo malam, biru kobalt, oranye tangerin. */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+  --bg: 246 248 255;          /* #F6F8FF */
+  --surface: 255 255 255;
+  --sunken: 236 240 252;
+  --line: 218 224 243;
+  --ink: 30 35 71;            /* #1E2347 */
+  --muted: 84 91 132;
+  --shadow: 30 35 71;
+
+  --primary: 59 91 219;       /* #3B5BDB */
+  --primary-soft: 228 234 255;
+  --primary-ink: 44 70 180;
+  --accent: 255 138 61;       /* #FF8A3D */
+  --accent-soft: 255 236 222;
+  --accent-ink: 160 70 8;
+  --success: 59 178 115;      /* #3BB273 */
+  --success-soft: 223 245 232;
+  --success-ink: 26 112 66;
+  --danger: 255 107 94;       /* #FF6B5E */
+  --danger-soft: 255 230 227;
+  --danger-ink: 178 45 34;
+  --warn: 245 179 1;
+  --warn-soft: 255 244 207;
+  --warn-ink: 128 86 0;
+
+  --verbal: 255 158 148;      /* #FF9E94 */
+  --verbal-soft: 255 237 234;
+  --verbal-ink: 158 49 38;
+  --english: 90 169 255;      /* #5AA9FF */
+  --english-soft: 228 241 255;
+  --english-ink: 26 92 168;
+  --numerik: 255 201 60;      /* #FFC93C */
+  --numerik-soft: 255 245 214;
+  --numerik-ink: 122 86 0;
+  --logika: 169 155 255;      /* #A99BFF */
+  --logika-soft: 239 236 255;
+  --logika-ink: 82 64 184;
+  --nonverbal: 126 224 195;   /* #7EE0C3 */
+  --nonverbal-soft: 225 248 241;
+  --nonverbal-ink: 20 112 86;
+  --khusus: 255 138 61;
+  --khusus-soft: 255 236 222;
+  --khusus-ink: 160 70 8;
+}
+
+/* Mode gelap: latar biru malam, bukan hitam murni. */
+[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: 14 20 48;
+  --surface: 22 30 66;
+  --sunken: 11 16 40;
+  --line: 44 54 102;
+  --ink: 233 236 255;
+  --muted: 167 175 216;
+  --shadow: 0 0 0;
+
+  --primary: 124 147 255;
+  --primary-soft: 36 48 104;
+  --primary-ink: 176 192 255;
+  --accent: 255 160 96;
+  --accent-soft: 72 44 34;
+  --accent-ink: 255 196 156;
+  --success: 92 204 145;
+  --success-soft: 22 64 50;
+  --success-ink: 144 228 184;
+  --danger: 255 130 120;
+  --danger-soft: 84 36 44;
+  --danger-ink: 255 178 170;
+  --warn: 255 205 70;
+  --warn-soft: 70 58 22;
+  --warn-ink: 255 222 140;
+
+  --verbal: 255 158 148;
+  --verbal-soft: 72 40 52;
+  --verbal-ink: 255 196 188;
+  --english: 120 186 255;
+  --english-soft: 30 52 92;
+  --english-ink: 176 214 255;
+  --numerik: 255 208 90;
+  --numerik-soft: 70 60 30;
+  --numerik-ink: 255 226 150;
+  --logika: 180 168 255;
+  --logika-soft: 50 44 96;
+  --logika-ink: 208 200 255;
+  --nonverbal: 126 224 195;
+  --nonverbal-soft: 22 66 60;
+  --nonverbal-ink: 160 236 214;
+  --khusus: 255 160 96;
+  --khusus-soft: 72 44 34;
+  --khusus-ink: 255 196 156;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-bg text-ink font-sans text-body antialiased;
+    min-height: 100dvh;
+  }
+  h1, h2, h3 {
+    @apply font-display font-bold tracking-tight;
+  }
+  :focus-visible {
+    outline: 3px solid rgb(var(--primary));
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection {
+    background: rgb(var(--primary) / 0.22);
+  }
+}
+
+@layer components {
+  .wrap {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+  }
+  .eyebrow {
+    @apply text-eyebrow font-bold uppercase text-primary-ink;
+  }
+  .card {
+    @apply rounded-card border border-line bg-surface shadow-card;
+  }
+  /* Register ilustratif: kartu tebal untuk beranda dan momen merek. Tidak dipakai di alur soal. */
+  .card-bold {
+    @apply rounded-card border-2 border-ink/90 bg-surface shadow-chunky;
+  }
+  .btn {
+    @apply inline-flex min-h-[44px] select-none items-center justify-center gap-2 rounded-xl2 px-4 py-2 font-bold
+      transition-[background-color,box-shadow,transform,color] duration-150 disabled:cursor-not-allowed disabled:opacity-55;
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .btn-primary {
+    @apply btn bg-primary text-white shadow-[0_3px_0_rgb(var(--primary-ink))] hover:brightness-110;
+  }
+  [data-theme='dark'] .btn-primary {
+    @apply text-[rgb(14_20_48)];
+  }
+  .btn-accent {
+    @apply btn bg-accent text-[rgb(40_20_0)] shadow-[0_3px_0_rgb(var(--accent-ink))] hover:brightness-105;
+  }
+  .btn-secondary {
+    @apply btn border border-line bg-surface text-ink hover:bg-sunken;
+  }
+  .btn-ghost {
+    @apply btn text-ink hover:bg-sunken;
+  }
+  .btn-danger {
+    @apply btn bg-danger-soft text-danger-ink hover:brightness-95;
+  }
+  .btn-sm {
+    @apply min-h-[36px] px-3 py-1 text-sm;
+  }
+  .input {
+    @apply min-h-[44px] w-full rounded-xl2 border border-line bg-surface px-3 py-2 text-ink placeholder:text-muted/80
+      focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30;
+  }
+  .label {
+    @apply mb-1 block text-sm font-bold text-ink;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-meta font-bold;
+  }
+  .chip-info { @apply chip bg-primary-soft text-primary-ink; }
+  .chip-success { @apply chip bg-success-soft text-success-ink; }
+  .chip-warn { @apply chip bg-warn-soft text-warn-ink; }
+  .chip-danger { @apply chip bg-danger-soft text-danger-ink; }
+  .chip-muted { @apply chip bg-sunken text-muted; }
+  .link {
+    @apply font-bold text-primary-ink underline decoration-primary/30 underline-offset-4 hover:decoration-primary;
+  }
+  .table-wrap {
+    @apply my-3 overflow-x-auto rounded-xl border border-line;
+  }
+}
+
+/* Teks soal, pilihan, dan pembahasan (Markdown + KaTeX). */
+.md {
+  overflow-wrap: anywhere;
+}
+.md > * + * {
+  margin-top: 0.6em;
+}
+.md p {
+  margin: 0;
+}
+.md p + p {
+  margin-top: 0.6em;
+}
+.md strong {
+  font-weight: 800;
+}
+.md ul,
+.md ol {
+  padding-left: 1.4em;
+}
+.md ul { list-style: disc; }
+.md ol { list-style: decimal; }
+.md li + li { margin-top: 0.25em; }
+.md h2 {
+  font-size: 1.25em;
+  margin-top: 1.2em;
+}
+.md h3 {
+  font-size: 1.1em;
+  margin-top: 1em;
+}
+.md blockquote {
+  border-left: 4px solid rgb(var(--accent));
+  background: rgb(var(--accent-soft));
+  color: rgb(var(--ink));
+  padding: 0.6em 0.9em;
+  border-radius: 0 0.75rem 0.75rem 0;
+}
+.md table {
+  border-collapse: collapse;
+  min-width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.md th,
+.md td {
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 0.4em 0.75em;
+  text-align: left;
+  white-space: nowrap;
+}
+.md th {
+  background: rgb(var(--sunken));
+  font-weight: 800;
+}
+.md code {
+  background: rgb(var(--sunken));
+  padding: 0.1em 0.35em;
+  border-radius: 0.35em;
+  font-size: 0.92em;
+}
+.md a {
+  color: rgb(var(--primary-ink));
+  text-decoration: underline;
+}
+.md .katex {
+  font-size: 1.05em;
+}
+.md .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25em 0;
+  margin: 0.5em 0;
+}
+.md-inline > p {
+  display: inline;
+}
+
+/* Ukuran teks soal bisa diperbesar sampai 150%. */
+.q-scale {
+  font-size: calc(1.0625rem * var(--q-scale, 1));
+  line-height: 1.65;
+}
+
+/* Kartu unit: membesar sedikit saat disorot, tanpa animasi berulang. */
+.unit-card {
+  transition: transform 220ms ease-out, box-shadow 220ms ease-out;
+}
+@media (hover: hover) {
+  .unit-card:hover {
+    transform: scale(1.03);
+  }
+}
+
+/* ------------------------------------------------------------- maskot */
+
+.mascot-float {
+  position: fixed;
+  z-index: 40;
+  right: calc(var(--mascot-right, 24px) + env(safe-area-inset-right, 0px));
+  bottom: calc(var(--mascot-bottom, 24px) + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+.mascot-float > * {
+  pointer-events: auto;
+}
+.mascot-stage {
+  position: relative;
+  width: var(--mascot-size, 140px);
+  height: var(--mascot-size, 140px);
+  transform-origin: 50% 85%;
+  transition: transform 250ms ease-out;
+}
+.mascot-stage img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: opacity 260ms ease;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.mascot-anim {
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 90%;
+  will-change: transform;
+}
+.mascot-paused .mascot-anim {
+  animation-play-state: paused !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  .mascot-hoverable:hover .mascot-stage {
+    transform: rotate(3deg) scale(1.04);
+  }
+  .mascot-hoverable:hover .mascot-anim {
+    animation-play-state: paused;
+  }
+}
+.mascot-bubble {
+  position: absolute;
+  right: calc(100% - 18px);
+  bottom: calc(var(--mascot-size, 140px) * 0.62);
+  width: max-content;
+  max-width: min(240px, 62vw);
+  background: rgb(var(--surface));
+  color: rgb(var(--ink));
+  border: 2px solid rgb(var(--ink) / 0.9);
+  border-radius: 16px 16px 4px 16px;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.35;
+  box-shadow: 0 3px 0 rgb(var(--ink) / 0.9);
+  animation: bubble-in 200ms ease-out;
+}
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+.confetti {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  overflow: hidden;
+}
+.confetti i {
+  position: absolute;
+  top: -12px;
+  width: 9px;
+  height: 14px;
+  border-radius: 3px;
+  opacity: 0.95;
+  animation: confetti-fall var(--dur, 1800ms) cubic-bezier(0.2, 0.6, 0.4, 1) forwards;
+}
+@keyframes confetti-fall {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translate3d(var(--dx, 0), 105vh, 0) rotate(var(--rot, 540deg)); opacity: 0; }
+}
+
+@keyframes skeleton {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, rgb(var(--sunken)) 0, rgb(var(--line) / 0.6) 40px, rgb(var(--sunken)) 80px);
+  background-size: 200px 100%;
+  animation: skeleton 1.2s ease-in-out infinite;
+  border-radius: 0.75rem;
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+.sheet-up {
+  animation: sheet-up 220ms ease-out;
+}
+
+/* Semua animasi mati bila pengguna memilih "kurangi gerak". */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .unit-card:hover {
+    transform: none;
+  }
+  .confetti {
+    display: none;
+  }
+}
