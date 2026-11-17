@@ -1,0 +1,20 @@
+[Unit]
+Description=Web Persiapan IUP
+After=network.target
+
+[Service]
+Type=simple
+User=iup
+WorkingDirectory=/opt/iup
+EnvironmentFile=/opt/iup/.env
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning server/index.js
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/iup /var/backups/iup
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
