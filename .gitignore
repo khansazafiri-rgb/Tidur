@@ -1,0 +1,9 @@
+node_modules/
+web/dist/
+# Bank soal, database, dan daftar file Drive tidak pernah di-commit (repo ini publik, soal berhak cipta).
+data/
+*.db
+*.db-wal
+*.db-shm
+.env
+.DS_Store
