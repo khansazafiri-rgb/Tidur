@@ -289,3 +289,38 @@ test('misi harian, streak, dan status tutorial', async () => {
   r = await call('PATCH', '/api/me/profile', { tutorial_status: 'asal' });
   assert.equal(r.status, 400);
 });
+
+test('admin: pengayaan massal perlu kelengkapan, hak akses, dan konfirmasi pemilik', async () => {
+  resetRateLimits();
+  const ordinary = client();
+  await ordinary('POST', '/api/auth/register', { email: 'pengayaan-biasa@contoh.id', password: 'rahasia123' });
+  let r = await ordinary('GET', '/api/admin/enrichment/preview');
+  assert.equal(r.status, 403);
+
+  const call = client();
+  await call('POST', '/api/auth/register', { email: 'pemilik-pengayaan@contoh.id', password: 'rahasia123' });
+  db.prepare("UPDATE profiles SET role = 'owner' WHERE user_id = (SELECT id FROM users WHERE email = 'pemilik-pengayaan@contoh.id')").run();
+
+  const original = db.prepare("SELECT id, status FROM questions WHERE stem LIKE 'Next:%'").get();
+  assert.equal(original.status, 'pending_enrichment');
+  r = await call('GET', '/api/admin/enrichment/preview');
+  assert.equal(r.status, 200);
+  assert.ok(r.body.blocked >= 1);
+
+  r = await call('POST', '/api/admin/enrichment/verify', { confirmedReview: false, confirmedRights: true });
+  assert.equal(r.status, 400);
+
+  db.prepare("UPDATE questions SET answer = 'B', explanation = 'Deret naik dua setiap langkah.', difficulty_ai = 'medium' WHERE id = ?").run(original.id);
+  r = await call('GET', '/api/admin/enrichment/preview');
+  assert.ok(r.body.ready >= 1);
+
+  r = await call('POST', '/api/admin/enrichment/verify', { confirmedReview: true, confirmedRights: true });
+  assert.equal(r.status, 200);
+  assert.ok(r.body.changed >= 1);
+  const updated = db.prepare('SELECT status, extra FROM questions WHERE id = ?').get(original.id);
+  assert.equal(updated.status, 'draft');
+  assert.equal(JSON.parse(updated.extra).enrichment_review.method, 'bulk_owner_confirmation');
+
+  r = await call('POST', '/api/admin/enrichment/verify', { confirmedReview: true, confirmedRights: true });
+  assert.equal(r.body.changed, 0);
+});
