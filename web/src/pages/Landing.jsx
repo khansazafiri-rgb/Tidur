@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, Clock, LineChart, ListChecks, X } from 'lucide-react';
+import { ArrowRight, Check, Clock, LineChart, ListChecks, Sparkles, X } from 'lucide-react';
 import { get } from '../lib/api.js';
 import { num } from '../lib/format.js';
 import { useAuth } from '../lib/auth.jsx';
@@ -76,37 +76,55 @@ export default function Landing() {
   return (
     <>
       <section className="relative overflow-hidden">
-        <div className="wrap grid items-center gap-8 py-10 md:grid-cols-[1.05fr_1fr] md:py-16">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-accent/10" aria-hidden="true" />
+        <div className="pointer-events-none absolute -left-20 top-40 h-64 w-64 rounded-full bg-primary/10" aria-hidden="true" />
+        <div className="wrap relative grid items-center gap-10 py-10 md:grid-cols-[1.05fr_1fr] md:py-16">
           <div>
-            <p className="eyebrow mb-3">Tes masuk kedokteran jalur IUP</p>
-            <h1 className="text-hero">
-              Latihan soal IUP yang <span className="text-primary">ada pembahasannya</span>, di setiap soal.
+            <p className="eyebrow mb-4"><Sparkles className="h-4 w-4" /> Tes masuk kedokteran jalur IUP</p>
+            <h1 className="font-display text-hero font-semibold">
+              Latihan soal IUP yang <span className="relative whitespace-nowrap text-primary">ada pembahasannya<svg className="absolute -bottom-2 left-0 w-full" height="10" viewBox="0 0 200 10" preserveAspectRatio="none" aria-hidden="true"><path d="M2 7 Q 50 1 100 6 T 198 4" stroke="rgb(var(--accent))" strokeWidth="4" fill="none" strokeLinecap="round" /></svg></span>, di setiap soal.
             </h1>
-            <p className="mt-4 max-w-xl text-intro text-muted">
-              Pilih kampus targetmu, berlatih per subtopik, dan lihat bagian mana yang masih lemah sebelum hari tes. Gratis.
+            <p className="mt-5 max-w-xl text-intro text-muted">
+              Pilih kampus targetmu, berlatih per subtopik bareng Oyen si kucing dokter, dan lihat bagian mana yang masih lemah sebelum hari tes.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link to={cta.to} className="btn-primary !min-h-[52px] !px-6 text-lg">{cta.label} <ArrowRight className="h-5 w-5" /></Link>
-              <Link to="/panduan/UNAIR" className="btn-secondary !min-h-[52px]">Lihat format tes</Link>
+            <ul className="mt-5 flex flex-wrap gap-2" aria-label="Keunggulan">
+              {[['Gratis', 'bg-success-soft text-success-ink'], [data ? `${num(data.question_count)} soal` : 'Ribuan soal', 'bg-primary-soft text-primary-ink'], ['Ada pembahasan', 'bg-warn-soft text-warn-ink'], ['UNAIR · UGM · UI', 'bg-logika-soft text-logika-ink']].map(([t, c]) => (
+                <li key={t} className={`rounded-full px-3 py-1 font-display text-sm font-semibold ${c}`}>{t}</li>
+              ))}
+            </ul>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link to={cta.to} className="btn-primary btn-lg">{cta.label} <ArrowRight className="h-5 w-5" /></Link>
+              <Link to="/panduan/UNAIR" className="btn-secondary btn-lg">Lihat format tes</Link>
             </div>
-            {data && (
-              <p className="mt-5 text-sm text-muted">
-                <strong className="text-ink">{num(data.question_count)} soal</strong> siap dilatih untuk UNAIR, UGM, dan UI.
-              </p>
-            )}
           </div>
           <div className="relative">
             <picture>
               <source srcSet="/illustrations/hero-800.webp 800w, /illustrations/hero.webp 1600w" sizes="(max-width: 768px) 100vw, 50vw" type="image/webp" />
               <img src="/illustrations/hero.jpg" alt="Maskot kucing dokter menyambut di depan kampus" width="1600" height="941"
-                className="aspect-[16/9.4] w-full rounded-[1.75rem] border-2 border-ink/90 object-cover shadow-chunky" fetchpriority="high" />
+                className="aspect-[16/9.4] w-full -rotate-1 rounded-[2rem] border-4 border-surface object-cover" style={{ boxShadow: '0 8px 0 rgb(var(--line-strong)), 0 20px 50px rgb(30 35 71 / 0.15)' }} fetchpriority="high" />
             </picture>
           </div>
         </div>
       </section>
 
+      <section className="wrap py-6" aria-labelledby="cara">
+        <h2 id="cara" className="font-display text-[1.8rem] font-semibold">Cara kerjanya</h2>
+        <ol className="mt-4 grid gap-4 sm:grid-cols-3">
+          {[
+            ['1', 'Pilih kampus', 'Kurikulum menyesuaikan tes UNAIR, UGM, atau UI.', 'bg-primary', 'var(--primary-lip)'],
+            ['2', 'Latihan 10 soal', 'Jawab, tekan Periksa, langsung baca pembahasannya.', 'bg-accent', 'var(--accent-lip)'],
+            ['3', 'Kejar yang lemah', 'Beranda menunjukkan subtopik yang perlu dilatih lagi.', 'bg-success', 'var(--success-lip)'],
+          ].map(([n, t, d, c, lip]) => (
+            <li key={n} className="card flex gap-4 p-4">
+              <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl font-display text-2xl font-semibold text-white ${c}`} style={{ boxShadow: `0 4px 0 rgb(${lip})` }}>{n}</span>
+              <span><strong className="block font-display text-lg font-semibold">{t}</strong><span className="text-sm text-muted">{d}</span></span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       <section className="wrap py-8" aria-labelledby="kampus">
-        <h2 id="kampus" className="text-section">Tiga kampus, tiga format tes</h2>
+        <h2 id="kampus" className="font-display text-[1.8rem] font-semibold">Tiga kampus, tiga format tes</h2>
         <p className="mt-1 text-muted">Satu bank soal, dipetakan ke subtopik yang diuji tiap kampus.</p>
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
           {(data?.universities || [{ code: 'UNAIR' }, { code: 'UGM' }, { code: 'UI' }]).map((u) => (
@@ -127,7 +145,7 @@ export default function Landing() {
 
       <section className="wrap grid gap-8 py-10 md:grid-cols-2 md:items-start" aria-labelledby="cuplikan">
         <div>
-          <h2 id="cuplikan" className="text-section">Bukan sekadar kunci jawaban</h2>
+          <h2 id="cuplikan" className="font-display text-[1.8rem] font-semibold">Bukan sekadar kunci jawaban</h2>
           <p className="mt-2 text-muted">
             Tes IUP penuh pola dan trik. Tanpa pembahasan, latihan cuma jadi tebak-tebakan. Di sini setiap soal punya penjelasan
             langkah demi langkah, label subtopik, dan tingkat kesulitan.
@@ -150,12 +168,12 @@ export default function Landing() {
 
       {data && (
         <section className="wrap py-8" aria-labelledby="unit">
-          <h2 id="unit" className="text-section">Yang akan kamu latih</h2>
+          <h2 id="unit" className="font-display text-[1.8rem] font-semibold">Yang akan kamu latih</h2>
           <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
             {data.units.map((u) => {
               const t = toneOf(u.code);
               return (
-                <div key={u.code} className={`unit-card rounded-card border-2 border-ink/90 ${t.bg} p-3 text-center shadow-chunky`}>
+                <div key={u.code} className={`unit-card rounded-card border-2 ${t.bg} p-3 text-center`} style={{ borderColor: `rgb(${t.lip})`, boxShadow: `0 5px 0 rgb(${t.lip})` }}>
                   <UnitImage unit={u.code} className="mx-auto aspect-square w-full max-w-[140px] object-contain" />
                   <p className={`mt-1 font-display text-lg font-bold ${t.ink}`}>{u.name}</p>
                   <p className="text-meta text-muted">{u.question_count ? `${num(u.question_count)} soal` : 'Segera hadir'}</p>
@@ -167,12 +185,12 @@ export default function Landing() {
       )}
 
       <section className="wrap py-12">
-        <div className="card-bold flex flex-col items-start gap-4 bg-primary-soft p-6 sm:flex-row sm:items-center sm:justify-between md:p-8">
+        <div className="relative flex flex-col items-start gap-4 overflow-hidden rounded-[2rem] bg-primary p-6 text-white sm:flex-row sm:items-center sm:justify-between md:p-8" style={{ boxShadow: '0 6px 0 rgb(var(--primary-lip))' }}>
           <div>
-            <h2 className="text-section">Mulai dari 10 soal hari ini</h2>
-            <p className="mt-1 text-muted">Daftar dalam hitungan detik. Progresmu tersimpan di semua perangkat.</p>
+            <h2 className="font-display text-[1.8rem] font-semibold">Mulai dari 10 soal hari ini</h2>
+            <p className="mt-1 text-white/85">Daftar dalam hitungan detik. Progresmu tersimpan di semua perangkat.</p>
           </div>
-          <Link to={cta.to} className="btn-primary !min-h-[52px] !px-6">{cta.label} <ArrowRight className="h-5 w-5" /></Link>
+          <Link to={cta.to} className="btn-accent btn-lg">{cta.label} <ArrowRight className="h-5 w-5" /></Link>
         </div>
         <p className="mt-6 text-center text-meta text-muted">
           Informasi format tes berasal dari file soal dan cerita peserta, bukan dari kampus. Web ini tidak berafiliasi dengan UNAIR, UGM, atau UI.

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, ChevronDown, Flag, Sparkles, ThumbsDown, ThumbsUp, X } from 'lucide-react';
+import { Check, ChevronDown, Flag, Lightbulb, Sparkles, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 import { get, post } from '../lib/api.js';
 import { Markdown } from './Markdown.jsx';
 import { Alert, Button, Modal } from './ui.jsx';
@@ -8,17 +8,18 @@ import { Alert, Button, Modal } from './ui.jsx';
 export function OptionList({ item, onPick, disabled = false, name = 'jawaban' }) {
   const revealed = item.revealed;
   return (
-    <div role="radiogroup" aria-label="Pilihan jawaban" className="grid gap-2.5">
+    <div role="radiogroup" aria-label="Pilihan jawaban" className="grid gap-3">
       {Object.entries(item.options).map(([key, text]) => {
         const chosen = item.answer === key;
         const isCorrect = revealed && key === item.correct_answer;
         const isWrong = revealed && chosen && key !== item.correct_answer;
-        let cls = 'border-line bg-surface hover:border-primary/70';
-        if (chosen && !revealed) cls = 'border-primary bg-primary-soft';
-        if (isCorrect) cls = 'border-success bg-success-soft';
-        if (isWrong) cls = 'border-danger bg-danger-soft';
-        if (revealed && !isCorrect && !isWrong) cls = 'border-line bg-surface opacity-75';
-        let badge = 'bg-sunken text-ink';
+        let cls = 'border-line bg-surface hover:border-primary/60 hover:bg-primary-soft/40';
+        let lip = 'var(--line-strong)';
+        if (chosen && !revealed) { cls = 'border-primary bg-primary-soft'; lip = 'var(--primary-lip)'; }
+        if (isCorrect) { cls = 'border-success bg-success-soft'; lip = 'var(--success-lip)'; }
+        if (isWrong) { cls = 'border-danger bg-danger-soft'; lip = 'var(--danger-lip)'; }
+        if (revealed && !isCorrect && !isWrong) cls = 'border-line bg-surface opacity-60';
+        let badge = 'border-2 border-line bg-surface text-muted';
         if (chosen && !revealed) badge = 'bg-primary text-white';
         if (isCorrect) badge = 'bg-success text-white';
         if (isWrong) badge = 'bg-danger text-white';
@@ -30,12 +31,13 @@ export function OptionList({ item, onPick, disabled = false, name = 'jawaban' })
             name={name}
             aria-checked={chosen}
             aria-label={`Pilihan ${key}${isCorrect ? ', jawaban benar' : ''}${isWrong ? ', jawabanmu, salah' : ''}`}
-            disabled={disabled || (revealed && !!item.answer)}
+            disabled={disabled || revealed}
             onClick={() => onPick?.(key)}
-            className={`group flex min-h-[52px] w-full items-start gap-3 rounded-xl2 border-2 px-3 py-2.5 text-left transition-colors disabled:cursor-default ${cls}`}
+            style={{ '--lip': lip }}
+            className={`group flex min-h-[56px] w-full items-start gap-3 rounded-2xl border-2 px-3.5 py-3 text-left font-semibold shadow-[0_4px_0_rgb(var(--lip))] transition-[transform,box-shadow,background-color] enabled:active:translate-y-[4px] enabled:active:shadow-none disabled:cursor-default ${cls}`}
           >
-            <span className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg font-extrabold ${badge}`} aria-hidden="true">
-              {isCorrect ? <Check className="h-4 w-4" /> : isWrong ? <X className="h-4 w-4" /> : key}
+            <span className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl font-display text-[1.05rem] font-semibold ${badge} ${isCorrect || isWrong ? 'pop-in' : ''}`} aria-hidden="true">
+              {isCorrect ? <Check className="h-5 w-5" strokeWidth={3} /> : isWrong ? <X className="h-5 w-5" strokeWidth={3} /> : key}
             </span>
             <span className="min-w-0 flex-1 pt-1">
               <Markdown inline>{text}</Markdown>
@@ -64,9 +66,10 @@ export function Explanation({ item, onRated }) {
     : item.is_correct ? { cls: 'text-success-ink', text: `Benar! Jawabannya ${item.correct_answer}.` }
       : { cls: 'text-danger-ink', text: `Jawabanmu ${item.answer}, jawaban benar ${item.correct_answer}.` };
   return (
-    <section className="rounded-card border border-line bg-sunken/60 p-4 sm:p-5" aria-label="Pembahasan">
+    <section id="pembahasan" className="scroll-mt-24 rounded-card border-2 border-warn/50 bg-warn-soft/50 p-4 sm:p-5" aria-label="Pembahasan">
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <h3 className="font-display text-lg font-bold">Pembahasan</h3>
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-warn text-[rgb(80_50_0)]"><Lightbulb className="h-5 w-5" /></span>
+        <h3 className="font-display text-xl font-semibold">Pembahasan</h3>
         {item.explanation_source === 'ai' && (
           <span className="chip-muted" title="Pembahasan ini disusun dengan bantuan AI lalu diperiksa">
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> dibuat dengan bantuan AI
@@ -75,7 +78,7 @@ export function Explanation({ item, onRated }) {
       </div>
       <p className={`mb-2 font-extrabold ${status.cls}`}>{status.text}</p>
       <Markdown className="q-scale">{item.explanation || 'Pembahasan belum tersedia.'}</Markdown>
-      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-t-2 border-warn/30 pt-3">
         <span className="text-sm font-bold text-muted">Pembahasan ini…</span>
         <Button variant={rating === true ? 'primary' : 'secondary'} size="sm" disabled={busy} onClick={() => rate(true)} aria-pressed={rating === true}>
           <ThumbsUp className="h-4 w-4" /> Membantu
@@ -148,7 +151,8 @@ export function PassagePanel({ passage, collapsible = false, defaultOpen = true 
   if (!collapsible) {
     return (
       <article className="card p-4 sm:p-5" aria-label="Bacaan">
-        {passage.title && <h2 className="mb-2 font-display text-lg font-bold">{passage.title}</h2>}
+        <span className="chip-info mb-2">Bacaan</span>
+        {passage.title && <h2 className="mb-2 font-display text-lg font-semibold">{passage.title}</h2>}
         <Markdown className="q-scale">{passage.text}</Markdown>
       </article>
     );

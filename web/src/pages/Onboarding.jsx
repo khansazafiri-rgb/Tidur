@@ -24,8 +24,9 @@ export default function Onboarding() {
   async function finish(changes = {}) {
     setBusy(true); setError('');
     try {
-      await updateProfile({ target_universities: unis, exam_date: date || null, daily_minutes: minutes, ...changes, onboarded: true });
-      nav('/beranda', { replace: true });
+      const u = await updateProfile({ target_universities: unis, exam_date: date || null, daily_minutes: minutes, ...changes, onboarded: true });
+      // Pengguna baru langsung diajak tutorial (bisa dilewati di sana).
+      nav(u.tutorial_status ? '/beranda' : '/tutorial', { replace: true });
     } catch (e) {
       setError(e.message);
       setBusy(false);
@@ -44,7 +45,7 @@ export default function Onboarding() {
     <div className="wrap max-w-3xl py-8">
       <div className="mb-6 flex items-center gap-3">
         <span className="text-meta font-bold text-muted">Langkah {step + 1} dari 3</span>
-        <ProgressBar value={step + 1} max={3} className="flex-1" label="Kemajuan pengisian" />
+        <ProgressBar value={step + 1} max={3} tone="accent" className="flex-1" label="Kemajuan pengisian" />
       </div>
       <div className="card grid gap-6 p-6 sm:grid-cols-[1fr_180px] sm:p-8">
         <div>
@@ -57,7 +58,8 @@ export default function Onboarding() {
                   const on = unis.includes(u);
                   return (
                     <button key={u} type="button" onClick={() => toggle(u)} aria-pressed={on}
-                      className={`flex min-h-[64px] items-center gap-4 rounded-xl2 border-2 px-4 text-left transition-colors ${on ? 'border-primary bg-primary-soft' : 'border-line hover:border-primary/60'}`}>
+                      style={{ '--lip': on ? 'var(--primary-lip)' : 'var(--line-strong)' }}
+                      className={`flex min-h-[68px] items-center gap-4 rounded-2xl border-2 px-4 text-left shadow-[0_4px_0_rgb(var(--lip))] transition-[transform,box-shadow] active:translate-y-[4px] active:shadow-none ${on ? 'border-primary bg-primary-soft' : 'border-line bg-surface hover:bg-sunken'}`}>
                       <span className={`grid h-7 w-7 place-items-center rounded-lg border-2 ${on ? 'border-primary bg-primary text-white' : 'border-line'}`}>{on && <Check className="h-4 w-4" />}</span>
                       <span><span className="block font-display text-lg font-bold">{u}</span><span className="text-sm text-muted">{UNI_NAMES[u]}</span></span>
                     </button>
@@ -81,7 +83,8 @@ export default function Onboarding() {
               <div className="mt-6 flex flex-wrap gap-2" role="radiogroup" aria-label="Waktu belajar per hari">
                 {MINUTES.map((m) => (
                   <button key={m} type="button" role="radio" aria-checked={minutes === m} onClick={() => setMinutes(m)}
-                    className={`min-h-[48px] rounded-xl2 border-2 px-4 font-bold ${minutes === m ? 'border-primary bg-primary-soft text-primary-ink' : 'border-line hover:border-primary/60'}`}>
+                    style={{ '--lip': minutes === m ? 'var(--primary-lip)' : 'var(--line-strong)' }}
+                    className={`min-h-[50px] rounded-2xl border-2 px-4 font-display font-semibold shadow-[0_4px_0_rgb(var(--lip))] active:translate-y-[4px] active:shadow-none ${minutes === m ? 'border-primary bg-primary-soft text-primary-ink' : 'border-line bg-surface hover:bg-sunken'}`}>
                     {m >= 120 ? '2 jam+' : m >= 60 ? `${m / 60 === 1 ? '1' : '1,5'} jam` : `${m} menit`}
                   </button>
                 ))}
@@ -97,7 +100,7 @@ export default function Onboarding() {
             </Button>
           </div>
         </div>
-        <div className="hidden items-end justify-center sm:flex"><MascotPose pose={POSES[step]} size={180} /></div>
+        <div className="order-first flex items-end justify-center sm:order-none"><MascotPose pose={POSES[step]} size={170} /></div>
       </div>
     </div>
   );

@@ -21,6 +21,7 @@ import NotFound from './pages/NotFound.jsx';
 const Session = lazy(() => import('./pages/Session.jsx'));
 const Result = lazy(() => import('./pages/Result.jsx'));
 const AdminApp = lazy(() => import('./pages/admin/AdminApp.jsx'));
+const Tutorial = lazy(() => import('./pages/Tutorial.jsx'));
 
 function RequireAuth({ children, onboarding = true }) {
   const { user, loading } = useAuth();
@@ -76,6 +77,7 @@ function Shell() {
             <Route path="sesi/:id/hasil" element={<Result />} />
           </Route>
           <Route path="sesi/:id" element={<RequireAuth><Session /></RequireAuth>} />
+          <Route path="tutorial" element={<RequireAuth><Tutorial /></RequireAuth>} />
           <Route path="admin/*" element={<RequireStaff><AdminApp /></RequireStaff>} />
           <Route element={<PublicLayout />}>
             <Route path="*" element={<NotFound />} />

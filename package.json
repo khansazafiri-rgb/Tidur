@@ -25,8 +25,8 @@
     "express": "^4.21.2"
   },
   "devDependencies": {
-    "@fontsource/baloo-2": "^5.1.0",
-    "@fontsource/nunito-sans": "^5.1.0",
+    "@fontsource/fredoka": "^5.1.0",
+    "@fontsource/nunito": "^5.1.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "concurrently": "^9.1.0",

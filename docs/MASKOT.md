@@ -1,4 +1,26 @@
-# Sistem maskot
+# Sistem maskot (Oyen)
+
+Nama maskot: **Oyen**, kucing dokter oranye. Nama diatur di `MASCOT_NAME` (`web/src/components/learn.jsx`).
+
+## Oyen bukan pajangan
+
+Ketuk Oyen untuk membuka **panel asisten** (`web/src/mascot/MascotPanel.jsx`):
+
+- **Misi harian dan streak.** Target soal per hari (10/20/30/40 sesuai waktu belajar di profil), api streak
+  (hari dengan minimal 10 soal, sesuai aturan PRD), dan tujuh hari terakhir. Data dari `GET /api/me/daily`.
+- **Minta petunjuk.** Saat mengerjakan soal mode santai, Oyen memberi petunjuk *cara berpikir* per subtopik
+  (`SUBTOPIC_HINTS`), bukan jawaban. Di mode ujian Oyen diam supaya kamu fokus.
+- **Jalan pintas:** lanjutkan sesi yang belum selesai, latih subtopik terlemah (10 soal santai, sekali ketuk).
+- **Tips belajar**, **Elus Oyen** (hati beterbangan + pose senang), **Ulangi tutorial**, dan **Sembunyikan Oyen**.
+
+Oyen juga menyapa duluan:
+
+- Mengingatkan misi harian atau sesi yang belum selesai (sekali per sesi browser, dengan lencana "1").
+- Di layar soal: menawarkan petunjuk bila kamu diam 75 detik, menyemangati setelah 3 jawaban salah beruntun,
+  merayakan combo benar beruntun, dan mengajak istirahat setelah 25 menit (pose tidur).
+- Sesekali melambai atau mengangguk sendiri (bukan di layar soal, mati bila kurangi gerak).
+
+Disentuh: efek *squish* (memantul). Di layar soal pada ponsel, Oyen mengintip dari tepi supaya tidak menutupi pilihan jawaban.
 
 Maskot kucing dokter dijalankan oleh satu komponen bersama (`web/src/mascot/Mascot.jsx`) yang membaca
 `web/src/mascot/mascot-animation.json`. Ubah file JSON itu untuk mengubah perilaku maskot; tidak ada angka

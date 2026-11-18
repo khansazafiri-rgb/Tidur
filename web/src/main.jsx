@@ -1,11 +1,13 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import '@fontsource/baloo-2/600.css';
-import '@fontsource/baloo-2/700.css';
-import '@fontsource/nunito-sans/400.css';
-import '@fontsource/nunito-sans/700.css';
-import '@fontsource/nunito-sans/800.css';
+import '@fontsource/fredoka/500.css';
+import '@fontsource/fredoka/600.css';
+import '@fontsource/fredoka/700.css';
+import '@fontsource/nunito/400.css';
+import '@fontsource/nunito/600.css';
+import '@fontsource/nunito/700.css';
+import '@fontsource/nunito/800.css';
 import './styles.css';
 import { App } from './App.jsx';
 

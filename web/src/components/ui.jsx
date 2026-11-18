@@ -4,9 +4,9 @@ import { DIFF_LABEL } from '../lib/format.js';
 import { MascotPose } from '../mascot/Mascot.jsx';
 
 export function Button({ variant = 'primary', size, busy = false, className = '', children, ...rest }) {
-  const v = { primary: 'btn-primary', accent: 'btn-accent', secondary: 'btn-secondary', ghost: 'btn-ghost', danger: 'btn-danger' }[variant];
+  const v = { primary: 'btn-primary', accent: 'btn-accent', success: 'btn-success', dangerSolid: 'btn-danger-solid', secondary: 'btn-secondary', ghost: 'btn-ghost', danger: 'btn-danger' }[variant];
   return (
-    <button type="button" className={`${v} ${size === 'sm' ? 'btn-sm' : ''} ${className}`} aria-busy={busy || undefined} disabled={busy || rest.disabled} {...rest}>
+    <button type="button" className={`${v} ${size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : ''} ${className}`} aria-busy={busy || undefined} disabled={busy || rest.disabled} {...rest}>
       {busy && <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden="true" />}
       {children}
     </button>
@@ -17,13 +17,16 @@ export function Card({ bold = false, className = '', as: Tag = 'div', children, 
   return <Tag className={`${bold ? 'card-bold' : 'card'} ${className}`} {...rest}>{children}</Tag>;
 }
 
-export function PageHeader({ eyebrow, title, intro, children }) {
+export function PageHeader({ eyebrow, title, intro, children, art }) {
   return (
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div className="min-w-0">
-        {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
-        <h1 className="text-page">{title}</h1>
-        {intro && <p className="mt-2 max-w-2xl text-intro text-muted">{intro}</p>}
+      <div className="flex min-w-0 items-end gap-4">
+        {art}
+        <div className="min-w-0">
+          {eyebrow && <p className="eyebrow mb-2">{eyebrow}</p>}
+          <h1 className="text-page">{title}</h1>
+          {intro && <p className="mt-2 max-w-2xl text-intro text-muted">{intro}</p>}
+        </div>
       </div>
       {children && <div className="flex flex-wrap gap-2">{children}</div>}
     </header>
@@ -36,7 +39,7 @@ export function Segmented({ label, value, onChange, options, className = '', siz
   return (
     <div className={className}>
       {label && <span id={id} className="label">{label}</span>}
-      <div role="radiogroup" aria-labelledby={label ? id : undefined} className="inline-flex max-w-full flex-wrap gap-1 rounded-xl2 border border-line bg-sunken p-1">
+      <div role="radiogroup" aria-labelledby={label ? id : undefined} className="flex max-w-full flex-wrap gap-2">
         {options.map((o) => {
           const active = o.value === value;
           return (
@@ -47,13 +50,14 @@ export function Segmented({ label, value, onChange, options, className = '', siz
               aria-checked={active}
               disabled={o.disabled}
               onClick={() => onChange(o.value)}
-              className={`flex min-h-[40px] items-center gap-1.5 rounded-lg px-3 ${size === 'sm' ? 'text-sm' : ''} font-bold transition-colors disabled:opacity-45 ${
-                active ? 'bg-surface text-primary-ink shadow-card' : 'text-muted hover:text-ink'
+              style={{ '--lip': active ? 'var(--primary-lip)' : 'var(--line-strong)' }}
+              className={`flex min-h-[44px] items-center gap-1.5 rounded-xl2 border-2 px-4 font-display ${size === 'sm' ? 'text-sm' : 'text-[1rem]'} font-semibold shadow-[0_3px_0_rgb(var(--lip))] transition-[transform,box-shadow] active:translate-y-[3px] active:shadow-none disabled:opacity-40 ${
+                active ? 'border-primary bg-primary-soft text-primary-ink' : 'border-line bg-surface text-ink hover:bg-sunken'
               }`}
             >
               {o.icon}
               {o.label}
-              {o.hint != null && <span className="text-meta font-semibold opacity-75">{o.hint}</span>}
+              {o.hint != null && <span className="rounded-full bg-black/5 px-1.5 text-meta font-bold opacity-80">{o.hint}</span>}
             </button>
           );
         })}
@@ -62,12 +66,14 @@ export function Segmented({ label, value, onChange, options, className = '', siz
   );
 }
 
-export function ProgressBar({ value, max = 1, tone = 'primary', label, className = '' }) {
+const BAR_TONE = { primary: 'bg-primary', success: 'bg-success', accent: 'bg-accent', danger: 'bg-danger', warn: 'bg-warn' };
+
+export function ProgressBar({ value, max = 1, tone = 'primary', label, className = '', thin = false }) {
   const p = max ? Math.max(0, Math.min(1, value / max)) : 0;
-  const color = { primary: 'bg-primary', success: 'bg-success', accent: 'bg-accent', danger: 'bg-danger' }[tone] || tone;
+  const color = BAR_TONE[tone] || tone;
   return (
-    <div className={`h-2.5 w-full overflow-hidden rounded-full bg-sunken ${className}`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(p * 100)} aria-label={label}>
-      <div className={`h-full rounded-full ${color} transition-[width] duration-500`} style={{ width: `${p * 100}%` }} />
+    <div className={`bar ${thin ? '!h-3' : ''} ${className}`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(p * 100)} aria-label={label}>
+      <i className={color} style={{ width: `${p > 0 ? Math.max(p * 100, 6) : 0}%` }} />
     </div>
   );
 }
@@ -111,10 +117,10 @@ export function DifficultyBadge({ level, count }) {
   );
 }
 
-export function Stat({ label, value, hint, icon }) {
+export function Stat({ label, value, hint, icon, tone = 'bg-primary-soft text-primary-ink' }) {
   return (
     <div className="flex items-center gap-3">
-      {icon && <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl2 bg-primary-soft text-primary-ink">{icon}</div>}
+      {icon && <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${tone}`}>{icon}</div>}
       <div className="min-w-0">
         <div className="font-display text-2xl font-bold leading-none">{value}</div>
         <div className="mt-1 text-meta text-muted">{label}{hint && <span> · {hint}</span>}</div>
@@ -132,7 +138,7 @@ export function Alert({ tone = 'info', title, children, className = '', onClose 
   };
   const [cls, Icon] = map[tone];
   return (
-    <div role={tone === 'danger' ? 'alert' : 'status'} className={`flex gap-3 rounded-xl2 px-4 py-3 ${cls} ${className}`}>
+    <div role={tone === 'danger' ? 'alert' : 'status'} className={`flex gap-3 rounded-2xl border-2 border-current/10 px-4 py-3 ${cls} ${className}`}>
       <Icon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
       <div className="min-w-0 flex-1 text-sm">
         {title && <p className="font-extrabold">{title}</p>}
@@ -203,19 +209,19 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
       ref={ref}
       onCancel={(e) => { e.preventDefault(); onClose?.(); }}
       onClick={(e) => { if (e.target === ref.current) onClose?.(); }}
-      className={`w-[calc(100%-2rem)] ${w} rounded-card border border-line bg-surface p-0 text-ink shadow-lift backdrop:bg-[rgb(14_20_48/0.55)]`}
+      className={`w-[calc(100%-2rem)] ${w} rounded-[1.75rem] border-2 border-line bg-surface p-0 text-ink shadow-[0_6px_0_rgb(var(--line-strong)),0_24px_60px_rgb(30_35_71/0.25)] backdrop:bg-[rgb(30_35_71/0.45)] backdrop:backdrop-blur-[2px]`}
       aria-labelledby={title ? 'modal-title' : undefined}
     >
       {open && (
         <div className="flex max-h-[85dvh] flex-col">
-          <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+          <div className="flex items-start justify-between gap-3 px-6 pb-2 pt-5">
             <h2 id="modal-title" className="text-section">{title}</h2>
             <button type="button" onClick={onClose} className="-m-2 rounded-xl p-2 text-muted hover:bg-sunken hover:text-ink" aria-label="Tutup">
               <X className="h-5 w-5" />
             </button>
           </div>
-          <div className="overflow-y-auto px-5 py-4">{children}</div>
-          {footer && <div className="flex flex-wrap justify-end gap-2 border-t border-line px-5 py-3">{footer}</div>}
+          <div className="overflow-y-auto px-6 py-3">{children}</div>
+          {footer && <div className="flex flex-wrap justify-end gap-2 px-6 pb-6 pt-3">{footer}</div>}
         </div>
       )}
     </dialog>
@@ -224,7 +230,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
 
 export function Tabs({ tabs, value, onChange, className = '' }) {
   return (
-    <div role="tablist" className={`flex gap-1 overflow-x-auto border-b border-line ${className}`}>
+    <div role="tablist" className={`flex gap-2 overflow-x-auto pb-1 ${className}`}>
       {tabs.map((t) => (
         <button
           key={t.value}
@@ -232,12 +238,12 @@ export function Tabs({ tabs, value, onChange, className = '' }) {
           type="button"
           aria-selected={value === t.value}
           onClick={() => onChange(t.value)}
-          className={`-mb-px flex min-h-[44px] shrink-0 items-center gap-1.5 border-b-[3px] px-3 font-bold transition-colors ${
-            value === t.value ? 'border-primary text-primary-ink' : 'border-transparent text-muted hover:text-ink'
+          className={`flex min-h-[42px] shrink-0 items-center gap-1.5 rounded-full border-2 px-4 font-display font-semibold transition-colors ${
+            value === t.value ? 'border-primary bg-primary text-white' : 'border-line bg-surface text-muted hover:text-ink'
           }`}
         >
           {t.label}
-          {t.count != null && <span className="rounded-full bg-sunken px-2 text-meta">{t.count}</span>}
+          {t.count != null && <span className={`rounded-full px-2 text-meta font-extrabold ${value === t.value ? 'bg-white/25' : 'bg-sunken'}`}>{t.count}</span>}
         </button>
       ))}
     </div>

@@ -35,6 +35,10 @@ meRouter.patch('/profile', (req, res) => {
     const f = Math.max(1, Math.min(1.5, Number(b.font_scale) || 1));
     sets.push('font_scale = ?'); vals.push(f);
   }
+  if (b.tutorial_status !== undefined) {
+    if (![null, 'done', 'skipped'].includes(b.tutorial_status)) return res.status(400).json({ error: 'Status tutorial tidak valid.' });
+    sets.push('tutorial_status = ?'); vals.push(b.tutorial_status);
+  }
   let finishedOnboarding = false;
   if (b.onboarded !== undefined) {
     sets.push('onboarded = ?'); vals.push(b.onboarded ? 1 : 0);
@@ -85,6 +89,57 @@ export function subtopicProgress(db, userId) {
     .map((r) => ({ code: r.code, answered: r.answered, attempts: r.attempts, correct: r.correct, accuracy: r.attempts ? r.correct / r.attempts : null }));
 }
 
+// Hari dihitung dalam WIB (UTC+7). Hari "belajar" untuk streak = minimal 10 soal dijawab (PRD: Aturan bisnis).
+const STREAK_MIN = 10;
+const wibDay = (d = new Date()) => new Date(d.getTime() + 7 * 36e5).toISOString().slice(0, 10);
+
+export function dailyGoal(minutes) {
+  if (!minutes || minutes <= 15) return 10;
+  if (minutes <= 30) return 20;
+  if (minutes <= 60) return 30;
+  return 40;
+}
+
+/** Misi harian, streak, dan tujuh hari terakhir untuk beranda dan maskot. */
+export function dailyStats(db, userId, dailyMinutes) {
+  const rows = db.prepare(`SELECT date(i.answered_at, '+7 hours') AS day, COUNT(*) AS n, SUM(i.is_correct = 1) AS correct
+    FROM session_items i JOIN practice_sessions s ON s.id = i.session_id
+    WHERE s.user_id = ? AND i.answer IS NOT NULL AND i.answered_at >= ?
+    GROUP BY day`).all(userId, new Date(Date.now() - 400 * 864e5).toISOString());
+  const byDay = new Map(rows.map((r) => [r.day, r]));
+  const today = wibDay();
+  const dayStr = (offset) => wibDay(new Date(Date.now() - offset * 864e5));
+  let streak = 0;
+  // Hari ini belum mencapai target tidak memutus streak; hitung mundur mulai kemarin.
+  const start = (byDay.get(today)?.n || 0) >= STREAK_MIN ? 0 : 1;
+  for (let o = start; o < 400; o++) {
+    if ((byDay.get(dayStr(o))?.n || 0) >= STREAK_MIN) streak++;
+    else break;
+  }
+  const week = Array.from({ length: 7 }, (_, k) => {
+    const day = dayStr(6 - k);
+    const n = byDay.get(day)?.n || 0;
+    return { day, n, done: n >= STREAK_MIN };
+  });
+  return {
+    today_answered: byDay.get(today)?.n || 0,
+    today_correct: byDay.get(today)?.correct || 0,
+    daily_goal: dailyGoal(dailyMinutes),
+    streak,
+    streak_min: STREAK_MIN,
+    week,
+  };
+}
+
+meRouter.get('/daily', (req, res) => {
+  const db = getDb();
+  const user = publicUser(db, req.user.id);
+  const active = db.prepare("SELECT id, title FROM practice_sessions WHERE user_id = ? AND status = 'active' ORDER BY started_at DESC LIMIT 1").get(req.user.id) || null;
+  const weakest = subtopicProgress(db, req.user.id).filter((p) => p.attempts >= 5).sort((a, b) => a.accuracy - b.accuracy)[0] || null;
+  const weakName = weakest ? db.prepare('SELECT name FROM subtopics WHERE code = ?').get(weakest.code)?.name : null;
+  res.json({ ...dailyStats(db, req.user.id, user.daily_minutes), active_session: active, weakest: weakest ? { code: weakest.code, name: weakName, accuracy: weakest.accuracy } : null });
+});
+
 meRouter.get('/home', (req, res) => {
   const db = getDb();
   const user = publicUser(db, req.user.id);
@@ -131,6 +186,7 @@ meRouter.get('/home', (req, res) => {
 
   res.json({
     user,
+    daily: dailyStats(db, req.user.id, user.daily_minutes),
     active_session: active,
     today: today.map((s) => ({ code: s.code, name: s.name, unit: s.unit_code, description: s.description, question_count: s.question_count, accuracy: s.accuracy ?? null, reason: s.reason })),
     units,

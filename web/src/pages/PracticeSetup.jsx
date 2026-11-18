@@ -75,14 +75,14 @@ export default function PracticeSetup() {
   return (
     <div className="wrap max-w-3xl py-6 sm:py-8">
       <p className="eyebrow mb-1">Atur sesi latihan</p>
-      <div className={`card-bold mb-6 flex items-center gap-4 ${t.bg} p-4`}>
+      <div className={`card-bold mb-6 flex items-center gap-4 ${t.bg} p-4`} style={{ '--lip': t.lip }}>
         {target.kind === 'subtopic' ? (
-          <span className={`grid h-14 w-14 shrink-0 place-items-center rounded-xl2 bg-surface ${t.ink}`}><SubtopicIcon code={target.code} className="h-7 w-7" /></span>
+          <span className={`grid h-16 w-16 shrink-0 place-items-center rounded-2xl ${t.fill} text-white`} style={{ boxShadow: `0 4px 0 rgb(${t.lip})` }}><SubtopicIcon code={target.code} className="h-8 w-8" /></span>
         ) : (
           <UnitImage unit={target.unit} className="h-16 w-16 shrink-0 object-contain" />
         )}
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-bold leading-tight">{target.name}</h1>
+          <h1 className="font-display text-[1.8rem] font-semibold leading-tight">{target.name}</h1>
           {target.description && <p className="text-sm text-ink/80">{target.description}</p>}
           {target.total != null && <p className="text-meta font-bold text-ink/70">{num(target.total)} soal tersedia</p>}
         </div>
@@ -113,9 +113,10 @@ export default function PracticeSetup() {
                 { v: 'ujian', icon: BookOpenCheck, title: 'Ujian', desc: 'Jawaban bisa diganti. Pembahasan baru dibuka setelah sesi dikumpulkan.' },
               ].map(({ v, icon: Icon, title, desc }) => (
                 <button key={v} type="button" role="radio" aria-checked={mode === v} onClick={() => setMode(v)}
-                  className={`flex gap-3 rounded-xl2 border-2 p-4 text-left transition-colors ${mode === v ? 'border-primary bg-primary-soft' : 'border-line hover:border-primary/60'}`}>
-                  <Icon className={`mt-0.5 h-6 w-6 shrink-0 ${mode === v ? 'text-primary-ink' : 'text-muted'}`} />
-                  <span><strong className="block">{title}</strong><span className="text-sm text-muted">{desc}</span></span>
+                  style={{ '--lip': mode === v ? 'var(--primary-lip)' : 'var(--line-strong)' }}
+                  className={`flex gap-3 rounded-2xl border-2 p-4 text-left shadow-[0_4px_0_rgb(var(--lip))] transition-[transform,box-shadow] active:translate-y-[4px] active:shadow-none ${mode === v ? 'border-primary bg-primary-soft' : 'border-line bg-surface hover:bg-sunken'}`}>
+                  <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${mode === v ? 'bg-primary text-white' : 'bg-sunken text-muted'}`}><Icon className="h-6 w-6" /></span>
+                  <span><strong className="block font-display text-lg font-semibold">{title}</strong><span className="text-sm text-muted">{desc}</span></span>
                 </button>
               ))}
             </div>
@@ -132,7 +133,7 @@ export default function PracticeSetup() {
             )}
           </div>
           {startError && <Alert tone="warn">{startError}</Alert>}
-          <Button onClick={start} busy={busy} className="w-full !min-h-[52px] text-lg"><Play className="h-5 w-5" /> Mulai latihan</Button>
+          <Button onClick={start} busy={busy} size="lg" className="w-full"><Play className="h-5 w-5 fill-current" /> Mulai latihan</Button>
         </div>
       )}
     </div>

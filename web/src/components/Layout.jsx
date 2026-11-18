@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Bookmark, Home, LayoutGrid, Map, Moon, Shield, Sun, User, WifiOff } from 'lucide-react';
+import { Bookmark, Flame, Home, LayoutGrid, MailCheck, Map, Moon, Shield, Sun, Target, User, WifiOff, X } from 'lucide-react';
 import { useAuth, isStaff } from '../lib/auth.jsx';
 import { usePrefs } from '../lib/prefs.jsx';
 import { post } from '../lib/api.js';
 import { load, save } from '../lib/storage.js';
-import { FloatingMascot, MascotSpacer } from '../mascot/Mascot.jsx';
+import { FloatingMascot, MascotSpacer, useMascot } from '../mascot/Mascot.jsx';
 
 export function Logo({ compact = false }) {
   return (
@@ -68,20 +68,38 @@ function VerifyBanner() {
   const [sent, setSent] = useState(false);
   if (!user || user.email_verified || hidden) return null;
   return (
-    <div className="border-b border-line bg-primary-soft">
-      <div className="wrap flex flex-wrap items-center gap-x-4 gap-y-1 py-2 text-sm text-primary-ink">
-        <span className="font-bold">Verifikasi email kamu supaya akunmu aman dan bisa dipulihkan.</span>
-        {sent ? (
-          <span>Tautan sudah dikirim ke {user.email}.</span>
-        ) : (
-          <button type="button" className="link" onClick={() => post('/auth/verify/resend').then(() => setSent(true)).catch(() => setSent(true))}>
-            Kirim ulang tautan
+    <div className="wrap pt-3">
+      <div className="flex items-center gap-3 rounded-2xl border-2 border-primary/20 bg-primary-soft px-3 py-2 text-sm text-primary-ink">
+        <MailCheck className="h-5 w-5 shrink-0" aria-hidden="true" />
+        <span className="min-w-0 flex-1 font-semibold">
+          {sent ? <>Tautan verifikasi sudah dikirim ke <strong>{user.email}</strong>.</> : 'Verifikasi email supaya akunmu bisa dipulihkan.'}
+        </span>
+        {!sent && (
+          <button type="button" className="shrink-0 rounded-xl bg-primary px-3 py-1 font-display font-semibold text-white" onClick={() => post('/auth/verify/resend').then(() => setSent(true)).catch(() => setSent(true))}>
+            Kirim
           </button>
         )}
-        <button type="button" className="ml-auto text-meta underline" onClick={() => { save('iup-verify-dismissed', true); setHidden(true); }}>
-          Nanti saja
+        <button type="button" className="shrink-0 rounded-lg p-1 hover:bg-primary/10" aria-label="Tutup pengingat verifikasi" onClick={() => { save('iup-verify-dismissed', true); setHidden(true); }}>
+          <X className="h-4 w-4" />
         </button>
       </div>
+    </div>
+  );
+}
+
+/** Chip streak dan misi harian di header (data dari maskot). */
+function DailyChips() {
+  const { daily } = useMascot();
+  if (!daily) return null;
+  const done = daily.today_answered >= daily.daily_goal;
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="flex items-center gap-1 rounded-xl px-2 py-1 font-display font-semibold text-accent-ink" title={`Streak ${daily.streak} hari`} aria-label={`Streak ${daily.streak} hari`}>
+        <Flame className={`h-5 w-5 ${daily.streak ? 'flame fill-accent text-accent' : 'text-muted'}`} /> <span className={daily.streak ? '' : 'text-muted'}>{daily.streak}</span>
+      </span>
+      <span className={`flex items-center gap-1 rounded-xl px-2 py-1 font-display font-semibold ${done ? 'text-success-ink' : 'text-primary-ink'}`} title="Misi hari ini" aria-label={`Misi hari ini ${daily.today_answered} dari ${daily.daily_goal} soal`}>
+        <Target className="h-5 w-5" /> {Math.min(daily.today_answered, daily.daily_goal)}/{daily.daily_goal}
+      </span>
     </div>
   );
 }
@@ -126,12 +144,12 @@ export function AppLayout() {
         Lewati ke konten
       </a>
       <OfflineBanner />
-      <header className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b-2 border-line bg-surface/90 backdrop-blur">
         <div className="wrap flex h-16 items-center gap-4">
           <Link to="/beranda" aria-label="Beranda Persiapan IUP"><Logo /></Link>
           <nav aria-label="Utama" className="ml-6 hidden items-center gap-1 md:flex">
             {NAV.map(({ to, label, icon: Icon }) => (
-              <NavLink key={to} to={to} className={({ isActive }) => `btn-ghost btn-sm ${isActive ? '!bg-primary-soft !text-primary-ink' : ''}`}>
+              <NavLink key={to} to={to} className={({ isActive }) => `btn-ghost btn-sm border-2 ${isActive ? '!border-primary/30 !bg-primary-soft !text-primary-ink' : 'border-transparent'}`}>
                 <Icon className="h-4 w-4" aria-hidden="true" /> {label}
               </NavLink>
             ))}
@@ -140,6 +158,7 @@ export function AppLayout() {
             {isStaff(user) && (
               <Link to="/admin" className="btn-ghost btn-sm" aria-label="Panel admin"><Shield className="h-4 w-4" /><span className="hidden sm:inline">Admin</span></Link>
             )}
+            <DailyChips />
             <ThemeButton />
           </div>
         </div>
@@ -150,13 +169,13 @@ export function AppLayout() {
         <MascotSpacer />
       </main>
       <Footer />
-      <nav aria-label="Navigasi bawah" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      <nav aria-label="Navigasi bawah" className="fixed inset-x-0 bottom-0 z-30 border-t-2 border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         <div className="grid grid-cols-4">
           {NAV.map(({ to, label, icon: Icon }) => (
-            <NavLink key={to} to={to} className={({ isActive }) => `flex min-h-[60px] flex-col items-center justify-center gap-0.5 text-[0.75rem] font-bold ${isActive ? 'text-primary-ink' : 'text-muted'}`}>
+            <NavLink key={to} to={to} className={({ isActive }) => `flex min-h-[62px] flex-col items-center justify-center gap-0.5 font-display text-[0.8rem] font-semibold ${isActive ? 'text-primary-ink' : 'text-muted'}`}>
               {({ isActive }) => (
                 <>
-                  <span className={`grid h-7 w-12 place-items-center rounded-full ${isActive ? 'bg-primary-soft' : ''}`}><Icon className="h-5 w-5" aria-hidden="true" /></span>
+                  <span className={`grid h-8 w-12 place-items-center rounded-xl border-2 ${isActive ? 'border-primary/30 bg-primary-soft' : 'border-transparent'}`}><Icon className="h-5 w-5" strokeWidth={isActive ? 2.6 : 2} aria-hidden="true" /></span>
                   {label}
                 </>
               )}

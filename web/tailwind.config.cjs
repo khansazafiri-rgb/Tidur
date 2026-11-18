@@ -29,8 +29,8 @@ module.exports = {
         khusus: { DEFAULT: c('khusus'), soft: c('khusus-soft'), ink: c('khusus-ink') },
       },
       fontFamily: {
-        display: ['"Baloo 2"', 'ui-rounded', 'system-ui', 'sans-serif'],
-        sans: ['"Nunito Sans"', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        display: ['Fredoka', 'ui-rounded', 'system-ui', 'sans-serif'],
+        sans: ['Nunito', 'ui-rounded', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
       },
       fontSize: {
         meta: ['0.8125rem', { lineHeight: '1.4' }],
@@ -42,11 +42,12 @@ module.exports = {
         page: ['clamp(1.75rem, 1.4rem + 1.6vw, 2.5rem)', { lineHeight: '1.15' }],
         hero: ['clamp(2.1rem, 1.5rem + 3vw, 3.5rem)', { lineHeight: '1.08' }],
       },
-      borderRadius: { card: '1.25rem', xl2: '1rem' },
+      borderRadius: { card: '1.5rem', xl2: '1rem', blob: '2rem' },
       boxShadow: {
         card: '0 1px 2px rgb(var(--shadow) / 0.06), 0 4px 16px rgb(var(--shadow) / 0.06)',
         lift: '0 2px 4px rgb(var(--shadow) / 0.08), 0 12px 32px rgb(var(--shadow) / 0.12)',
-        chunky: '0 4px 0 rgb(var(--ink) / 0.9)',
+        chunky: '0 4px 0 rgb(var(--line-strong))',
+        lip: '0 4px 0 rgb(var(--lip, var(--line-strong)))',
       },
       screens: { xs: '360px' },
     },
