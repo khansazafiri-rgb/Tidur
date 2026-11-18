@@ -91,6 +91,83 @@ adminRouter.get('/skipped', (req, res) => {
   res.json({ skipped: rows, total });
 });
 
+// ---------------------------------------------------------------- pengayaan massal (kelengkapan, bukan verifikasi ilmiah)
+
+function inspectPendingEnrichment(db) {
+  const taxonomy = new Set(db.prepare('SELECT code FROM subtopics').all().map((s) => s.code));
+  const pending = db.prepare(
+    "SELECT id, type, stem, options, answer, explanation, subtopic_code, difficulty_ai, difficulty_calibrated, extra FROM questions WHERE status = 'pending_enrichment'"
+  ).all();
+  const reasons = { format: 0, stem: 0, options: 0, answer: 0, explanation: 0, subtopic: 0, difficulty: 0 };
+  const readyRows = [];
+  const samples = [];
+
+  for (const q of pending) {
+    const missing = [];
+    const options = parseJson(q.options, null);
+    const validOptions = options && typeof options === 'object' && !Array.isArray(options)
+      && Object.keys(options).length >= 2 && Object.values(options).every((v) => String(v || '').trim());
+    if (q.type !== 'mcq') missing.push('format');
+    if (!String(q.stem || '').trim()) missing.push('stem');
+    if (!validOptions) missing.push('options');
+    const answer = String(q.answer || '').trim().toUpperCase();
+    if (!validOptions || !answer || !Object.prototype.hasOwnProperty.call(options, answer)) missing.push('answer');
+    if (!String(q.explanation || '').trim()) missing.push('explanation');
+    if (!taxonomy.has(q.subtopic_code)) missing.push('subtopic');
+    if (!['easy', 'medium', 'hard'].includes(q.difficulty_ai) && !['easy', 'medium', 'hard'].includes(q.difficulty_calibrated)) missing.push('difficulty');
+
+    if (!missing.length) readyRows.push(q);
+    else {
+      for (const reason of missing) reasons[reason]++;
+      if (samples.length < 10) samples.push({ id: q.id, missing });
+    }
+  }
+  return {
+    summary: {
+      total: pending.length,
+      ready: readyRows.length,
+      blocked: pending.length - readyRows.length,
+      reasons,
+      samples,
+      disclaimer: 'Pemeriksaan hanya mengecek kelengkapan, bukan kebenaran ilmiah atau hak penggunaan soal.',
+    },
+    readyRows,
+  };
+}
+
+adminRouter.get('/enrichment/preview', (_req, res) => {
+  res.json(inspectPendingEnrichment(getDb()).summary);
+});
+
+adminRouter.post('/enrichment/verify', owner, (req, res) => {
+  if (req.body?.confirmedReview !== true || req.body?.confirmedRights !== true) {
+    return bad(res, 'Pemilik harus mengonfirmasi review kunci/pembahasan dan hak penggunaan soal.');
+  }
+  const db = getDb();
+  let changed = 0;
+  tx(db, () => {
+    const { readyRows } = inspectPendingEnrichment(db);
+    const now = nowIso();
+    const update = db.prepare(
+      "UPDATE questions SET status = 'draft', extra = ?, updated_at = ? WHERE id = ? AND status = 'pending_enrichment'"
+    );
+    for (const q of readyRows) {
+      const extra = parseJson(q.extra, {});
+      const audit = {
+        ...extra,
+        enrichment_review: { method: 'bulk_owner_confirmation', reviewed_by: req.user.id, reviewed_at: now },
+      };
+      changed += update.run(JSON.stringify(audit), now, q.id).changes;
+    }
+    if (changed) {
+      db.prepare('INSERT INTO import_logs(filename, folder, outcome, summary, created_by) VALUES (?, ?, ?, ?, ?)')
+        .run('__bulk_enrichment_review__', null, 'diterima', JSON.stringify({ changed, reviewed_at: now }), req.user.id);
+    }
+  });
+  if (changed) track(db, 'enrichment_bulk_reviewed', req.user.id, { changed });
+  res.json({ ok: true, changed, ...inspectPendingEnrichment(db).summary });
+});
+
 // ---------------------------------------------------------------- bank soal
 
 adminRouter.get('/questions', (req, res) => {
